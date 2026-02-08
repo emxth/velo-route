@@ -1,0 +1,15 @@
+{
+  "name": "velo-route",
+  "version": "1.0.0",
+  "private": true,
+  "license": "ISC",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "server": "npm run dev --prefix server",
+    "client": "npm run dev --prefix client"
+  },
+  "dependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
