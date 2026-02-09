@@ -4,6 +4,7 @@ import morgan from "morgan";
 import cors from "cors";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/auth.js";
+import { requestLogger } from "./middleware/requestLogger.js";
 
 dotenv.config({ path: "../.env" }); // point to root .env if that's where yours is
 connectDB();
@@ -25,6 +26,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 if (process.env.NODE_ENV !== "production") app.use(morgan("dev"));
+app.use(requestLogger);
 
 app.use("/api/auth", authRoutes);
 
