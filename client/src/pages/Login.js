@@ -14,11 +14,13 @@ const Login = () => {
     setError("");
     try {
       const user = await login(email, password);
-      if (user.role === "admin") navigate("/admin");
-      else if (user.role === "operator") navigate("/operator");
-      else if (user.role === "driver") navigate("/driver");
-      else if (user.role === "analyst") navigate("/analyst");
-      else navigate("/dashboard");
+      const toast = { message: "Logged in successfully", type: "success" };
+
+      if (user.role === "admin") navigate("/admin", { state: { toast } });
+      else if (user.role === "operator") navigate("/operator", { state: { toast } });
+      else if (user.role === "driver") navigate("/driver", { state: { toast } });
+      else if (user.role === "analyst") navigate("/analyst", { state: { toast } });
+      else navigate("/dashboard", { state: { toast } });
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
     }
@@ -62,7 +64,17 @@ const Login = () => {
             Go to Signup
           </button>
         </div>
-        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+
+        {error &&
+          <>
+            <hr className="my-6" />
+            <div className="border rounded-lg px-4 py-3 shadow-card bg-danger-50 text-danger-900 border-danger-500 mt-3">
+              <div className="font-medium">
+                <dev className="text-sm">{error}</dev>
+              </div>
+            </div>
+          </>
+        }
       </div>
     </div>
   );

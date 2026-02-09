@@ -1,6 +1,6 @@
 import { Routes, Route, Link } from "react-router-dom";
-
 import ProtectedRoute from "./components/ProtectedRoute";
+import ToastListener from "./components/ToastListener";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -25,35 +25,38 @@ const Unauthorized = () => <div>Unauthorized</div>;
 
 function App() {
     return (
-        <Routes>
-            {/* Public routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/unauthorized" element={<Unauthorized />} />
+        <>
+            <ToastListener />
+            <Routes>
+                {/* Public routes */}
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/unauthorized" element={<Unauthorized />} />
 
-            {/* Any logged-in user */}
-            <Route element={<ProtectedRoute />}>
-                <Route path="/dashboard" element={<UserDashboard />} />
-            </Route>
+                {/* Any logged-in user */}
+                <Route element={<ProtectedRoute />}>
+                    <Route path="/dashboard" element={<UserDashboard />} />
+                </Route>
 
-            {/* Role-based routes */}
-            <Route element={<ProtectedRoute roles={["admin"]} />}>
-                <Route path="/admin" element={<AdminPage />} />
-            </Route>
+                {/* Role-based routes */}
+                <Route element={<ProtectedRoute roles={["admin"]} />}>
+                    <Route path="/admin" element={<AdminPage />} />
+                </Route>
 
-            <Route element={<ProtectedRoute roles={["operator"]} />}>
-                <Route path="/operator" element={<OperatorPage />} />
-            </Route>
+                <Route element={<ProtectedRoute roles={["operator"]} />}>
+                    <Route path="/operator" element={<OperatorPage />} />
+                </Route>
 
-            <Route element={<ProtectedRoute roles={["driver"]} />}>
-                <Route path="/driver" element={<DriverPage />} />
-            </Route>
+                <Route element={<ProtectedRoute roles={["driver"]} />}>
+                    <Route path="/driver" element={<DriverPage />} />
+                </Route>
 
-            <Route element={<ProtectedRoute roles={["analyst"]} />}>
-                <Route path="/analyst" element={<AnalystPage />} />
-            </Route>
-        </Routes>
+                <Route element={<ProtectedRoute roles={["analyst"]} />}>
+                    <Route path="/analyst" element={<AnalystPage />} />
+                </Route>
+            </Routes>
+        </>
     );
 }
 
