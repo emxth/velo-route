@@ -13,11 +13,15 @@
   }
 
   h2 {
-    @apply text-3xl font-semibold font-display;
+    @apply text-2xl font-bold text-neutral-900 mb-6 font-display;
   }
 
   h3 {
     @apply text-2xl font-semibold font-display;
+  }
+
+  label {
+    @apply text-sm font-medium text-neutral-700;
   }
 }
 
