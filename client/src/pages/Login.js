@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
     const { login } = useAuth();
@@ -31,15 +31,15 @@ const Login = () => {
             <form onSubmit={handleSubmit}>
                 <div>
                     <label>Email</label>
-                    <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
+                    <input className="input-field" value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
                 </div>
                 <div>
                     <label>Password</label>
-                    <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required />
+                    <input className="input-field" value={password} onChange={(e) => setPassword(e.target.value)} type="password" required />
                 </div>
-                <button type="submit">Login</button>
+                <button className="btn-secondary" type="submit">Login</button>
             </form>
-            <button type="button" onClick={() => navigate("/register")}>
+            <button className="btn-primary" type="button" onClick={() => navigate("/register")}>
                 Go to Signup
             </button>
             {error && <p style={{ color: "red" }}>{error}</p>}

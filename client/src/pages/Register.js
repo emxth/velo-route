@@ -31,19 +31,19 @@ const Register = () => {
             <form onSubmit={handleSubmit}>
                 <div>
                     <label>Name</label>
-                    <input name="name" value={form.name} onChange={handleChange} required />
+                    <input className="input-field" name="name" value={form.name} onChange={handleChange} required />
                 </div>
                 <div>
                     <label>Email</label>
-                    <input name="email" value={form.email} onChange={handleChange} type="email" required />
+                    <input className="input-field" name="email" value={form.email} onChange={handleChange} type="email" required />
                 </div>
                 <div>
                     <label>Password</label>
-                    <input name="password" value={form.password} onChange={handleChange} type="password" required />
+                    <input className="input-field" name="password" value={form.password} onChange={handleChange} type="password" required />
                 </div>
                 <div>
                     <label>Role</label>
-                    <select name="role" value={form.role} onChange={handleChange}>
+                    <select className="input-field" name="role" value={form.role} onChange={handleChange}>
                         <option value="user">User</option>
                         <option value="operator">Operator</option>
                         <option value="driver">Driver</option>
@@ -51,7 +51,7 @@ const Register = () => {
                         <option value="admin">Admin</option>
                     </select>
                 </div>
-                <button type="submit">Register</button>
+                <button className="btn-primary" type="submit">Register</button>
             </form>
             {error && <p style={{ color: "red" }}>{error}</p>}
         </div>
