@@ -4,6 +4,7 @@ import morgan from "morgan";
 import cors from "cors";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/auth.js";
+import userRoutes from "./routes/users.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 
 dotenv.config({ path: "../.env" }); // point to root .env if that's where yours is
@@ -29,6 +30,7 @@ if (process.env.NODE_ENV !== "production") app.use(morgan("dev"));
 app.use(requestLogger);
 
 app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
 
 app.get("/", (_req, res) => res.send("VeloRoute API running"));
 
