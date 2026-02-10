@@ -10,14 +10,15 @@ import OperatorPage from "./pages/OperatorPage";
 import DriverPage from "./pages/DriverPage";
 import AnalystPage from "./pages/AnalystPage";
 import Welcome from "./pages/Welcome";
+import Header from "./components/Header";
 
 /* Public Pages */
 const Home = () => (
   <div>
     <h1>VeloRoute</h1>
-    <nav>
+    {/* <nav>
       <Link to="/login">Login</Link> | <Link to="/register">Register</Link>
-    </nav>
+    </nav> */}
   </div>
 );
 
@@ -27,9 +28,10 @@ function App() {
   return (
     <>
       <ToastListener />
+      <Header />
       <Routes>
         {/* Public routes */}
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
