@@ -1,4 +1,4 @@
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ProtectedLayout from "./layouts/ProtectedLayout";
 import ToastListener from "./components/ToastListener";
@@ -11,16 +11,6 @@ import DriverPage from "./pages/DriverPage";
 import AnalystPage from "./pages/AnalystPage";
 import Welcome from "./pages/Welcome";
 import Header from "./components/Header";
-
-/* Public Pages */
-const Home = () => (
-  <div>
-    <h1>VeloRoute</h1>
-    {/* <nav>
-      <Link to="/login">Login</Link> | <Link to="/register">Register</Link>
-    </nav> */}
-  </div>
-);
 
 const Unauthorized = () => <div>Unauthorized</div>;
 
