@@ -37,9 +37,13 @@ const Header = () => {
         <div className="flex items-center gap-4">
           {user && (
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 font-semibold rounded-full bg-primary-100 text-primary-800">
+              <button
+                onClick={() => navigate("/profile")}
+                className="flex items-center justify-center w-10 h-10 font-semibold rounded-full bg-primary-100 text-primary-800"
+                title="Profile"
+              >
                 {initials}
-              </div>
+              </button>
               <div className="leading-tight">
                 <div className="text-sm font-semibold text-neutral-900">{user.name}</div>
                 <div className="text-xs text-neutral-600">{user.email}</div>
