@@ -6,6 +6,10 @@ import {
   getMyPermissions,
   getUserPermissions,
   updateUserPermissions,
+  getCurrentUserDetails,
+  updateCurrentUserDetails,
+  deleteCurrentUser,
+  getUserDetailsById,
 } from "../services/userService.js";
 
 const router = express.Router();
@@ -14,6 +18,34 @@ const router = express.Router();
 router.get("/", protect, authorize("admin"), async (_req, res) => {
   const users = await listUsers();
   res.json(users);
+});
+
+// current user details
+router.get("/me", protect, async (req, res) => {
+  const user = await getCurrentUserDetails(req.user._id);
+  if (!user) return res.status(404).json({ message: "User not found" });
+  res.json(user);
+});
+
+// update current user
+router.put("/me", protect, async (req, res) => {
+  try {
+    const user = await updateCurrentUserDetails(req.user._id, req.body);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
+  } catch (err) {
+    if (err.message === "Email already used") {
+      return res.status(409).json({ message: err.message });
+    }
+    logger.error("user_update_failed", { error: err.message });
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+// delete current user
+router.delete("/me", protect, async (req, res) => {
+  await deleteCurrentUser(req.user._id);
+  res.json({ ok: true });
 });
 
 // current user's permissions
@@ -38,6 +70,13 @@ router.put("/:id/permissions", protect, authorize("admin"), async (req, res) => 
     allowedNav: responseNav,
   });
   res.json({ allowedNav: responseNav });
+});
+
+// get a user's full details (admin only)
+router.get("/:id", protect, authorize("admin"), async (req, res) => {
+  const user = await getUserDetailsById(req.params.id);
+  if (!user) return res.status(404).json({ message: "User not found" });
+  res.json(user);
 });
 
 export default router;

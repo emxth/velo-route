@@ -11,6 +11,7 @@ import DriverPage from "./pages/DriverPage";
 import AnalystPage from "./pages/AnalystPage";
 import Welcome from "./pages/Welcome";
 import Header from "./components/Header";
+import Profile from "./pages/Profile";
 
 const Unauthorized = () => <div>Unauthorized</div>;
 
@@ -30,6 +31,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<ProtectedLayout />}>
             <Route path="/welcome" element={<Welcome />} />
+            <Route path="/profile" element={<Profile />} />
 
             <Route element={<ProtectedRoute roles={["admin"]} />}>
               <Route path="/admin" element={<AdminPage />} />
