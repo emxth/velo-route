@@ -1,12 +1,17 @@
-import { User } from "../models/User.js";
+import mongoose from "mongoose";
+import {
+  listUsers as repoListUsers,
+  findById,
+  updateUserById,
+  deleteUserById,
+} from "../repositories/userRepository.js";
+import { ROLE_PERMISSIONS } from "../config/rolePermissions.js";
+import { AppError } from "../utils/AppError.js";
 
-const FULL_ADMIN_NAV = ["admin", "operator", "driver", "analyst"];
-const DEFAULT_USER_NAV = ["dashboard"];
-
-const shapeNav = (user) => {
-  if (!user) return DEFAULT_USER_NAV;
-  if (user.role === "admin") return FULL_ADMIN_NAV;
-  return user.allowedNav && user.allowedNav.length ? user.allowedNav : DEFAULT_USER_NAV;
+const ensureValidId = (id) => {
+  if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+    throw new AppError("Invalid user id", 400);
+  }
 };
 
 const shapeUser = (user) =>
@@ -15,49 +20,28 @@ const shapeUser = (user) =>
     name: user.name,
     email: user.email,
     role: user.role,
-    allowedNav: shapeNav(user),
+    allowedNav: ROLE_PERMISSIONS[user.role] || ROLE_PERMISSIONS.user,
   };
 
 export const listUsers = async () => {
-  const users = await User.find().select("name email role allowedNav");
-  return users.map((u) => ({
-    _id: u._id,
-    name: u.name,
-    email: u.email,
-    role: u.role,
-    allowedNav: shapeNav(u),
-  }));
-};
-
-export const getMyPermissions = async (user) => ({ allowedNav: shapeNav(user) });
-
-export const getUserPermissions = async (userId) => {
-  const user = await User.findById(userId).select("allowedNav role");
-  return { allowedNav: shapeNav(user) };
-};
-
-export const updateUserPermissions = async (userId, allowedNavInput) => {
-  const nextNav = allowedNavInput && allowedNavInput.length ? allowedNavInput : DEFAULT_USER_NAV;
-  const user = await User.findByIdAndUpdate(
-    userId,
-    { allowedNav: nextNav },
-    { new: true }
-  ).select("allowedNav role email");
-  return { user, allowedNav: shapeNav(user) };
+  const users = await repoListUsers();
+  return users.map(shapeUser);
 };
 
 export const getCurrentUserDetails = async (userId) => {
-  const user = await User.findById(userId).select("-password");
+  ensureValidId(userId);
+  const user = await findById(userId, "-password");
   return shapeUser(user);
 };
 
 export const updateCurrentUserDetails = async (userId, { name, email, password }) => {
-  const user = await User.findById(userId);
-  if (!user) return null;
+  ensureValidId(userId);
+  const user = await findById(userId);
+  if (!user) throw new AppError("User not found", 404);
 
   if (email && email !== user.email) {
-    const exists = await User.findOne({ email });
-    if (exists) throw new Error("Email already used");
+    const exists = await findById(userId, null).where({ email });
+    if (exists) throw new AppError("Email already used", 409);
     user.email = email;
   }
   if (name) user.name = name;
@@ -67,16 +51,36 @@ export const updateCurrentUserDetails = async (userId, { name, email, password }
 };
 
 export const deleteCurrentUser = async (userId) => {
-  await User.findByIdAndDelete(userId);
+  ensureValidId(userId);
+  await deleteUserById(userId);
   return true;
 };
 
-export const getUserDetailsById = async (userId) => {
-  const user = await User.findById(userId).select("-password");
-  return shapeUser(user);
+export const getMyPermissions = async (user) => ({
+  allowedNav: ROLE_PERMISSIONS[user.role] || ROLE_PERMISSIONS.user,
+});
+
+export const getUserPermissions = async (userId) => {
+  ensureValidId(userId);
+  const user = await findById(userId, "role");
+  if (!user) throw new AppError("User not found", 404);
+  return { allowedNav: ROLE_PERMISSIONS[user.role] || ROLE_PERMISSIONS.user };
 };
 
-export const constants = {
-  FULL_ADMIN_NAV,
-  DEFAULT_USER_NAV,
+// Update “permissions” by changing role (since nav is role-derived)
+export const updateUserRole = async (userId, role) => {
+  ensureValidId(userId);
+  if (!role || !ROLE_PERMISSIONS[role]) throw new AppError("Invalid role", 400);
+  const user = await updateUserById(userId, { role });
+  if (!user) throw new AppError("User not found", 404);
+  return {
+    user: shapeUser(user),
+    allowedNav: ROLE_PERMISSIONS[user.role] || ROLE_PERMISSIONS.user,
+  };
+};
+
+export const getUserDetailsById = async (userId) => {
+  ensureValidId(userId);
+  const user = await findById(userId, "-password");
+  return shapeUser(user);
 };
