@@ -1,16 +1,25 @@
-import express from "express";
+
 import dotenv from "dotenv";
+dotenv.config();
+
+import express from "express";
 import morgan from "morgan";
 import cors from "cors";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
+
+
+//Booking and Payment routes
+import bookingRoutes from "./routes/bookingRoutes.js";
+
 import { requestLogger } from "./middleware/requestLogger.js";
 
-dotenv.config({ path: "../.env" }); // point to root .env if that's where yours is
-connectDB();
 
+connectDB();
+ 
 const app = express();
+
 const rawOrigins = process.env.CORS_ORIGIN || "";
 const allowedOrigins = rawOrigins.split(",").map((s) => s.trim()).filter(Boolean);
 const corsOptions = {
@@ -28,6 +37,9 @@ app.use(cors(corsOptions));
 app.use(express.json());
 if (process.env.NODE_ENV !== "production") app.use(morgan("dev"));
 app.use(requestLogger);
+
+//Booking route
+app.use("/api/bookings", bookingRoutes);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
