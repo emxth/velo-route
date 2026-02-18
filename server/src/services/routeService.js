@@ -1,3 +1,4 @@
+import { error } from "winston";
 import { RouteRepository } from "../repositories/RouteRepository";
 import calculateDistance from "../utils/calculateDistance";
 import { logger } from "../utils/logger";
@@ -90,6 +91,17 @@ export class RouterService {
         if (!route) throw new Error("Route not Found");
 
         return await this.enrichStops(route);
+    }
+
+    //update exist routes
+    async updateRoute(id, data) {
+
+        //update data
+        const route = await repo.update(id, data);
+
+        if (!route) throw new Error("Route Not Found");
+
+        return route;
     }
 
 
