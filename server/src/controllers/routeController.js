@@ -16,5 +16,26 @@ export class RouteController {
         }
     }
 
+    //Read all routes 
+    async getAll(req, res) {
+        try {
+            const routes = await service.getAllRoutes();
+            res.status(201).json(routes);
+        } catch (err) {
+            logger.error(err.message);
+            res.status(500).json({ error: `Server Error ${err.message}` })
+        }
+    }
+
+    async getById(req, res) {
+        try {
+            const route = await service.getRouteByID(req.params.id);
+            res.status(201).json(route);
+        } catch (err) {
+            logger.error(err.message);
+            res.status(500).json({ error: `Server Error ${err.message}` });
+        }
+    }
+
 
 }
