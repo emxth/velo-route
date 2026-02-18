@@ -104,6 +104,14 @@ export class RouterService {
         return route;
     }
 
+    //delete routes
+    async deleteRoute(id) {
+        const route = await repo.delete(id);
+        if (!route) throw new Error("Route not Found");
+        return {
+            message: "Route deleted Successfully"
+        };
+    }
 
 
     //stops with segment distance/duration
