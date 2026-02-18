@@ -28,7 +28,8 @@ const ScheduleSchema = new mongoose.Schema({
         default: true
     },
     assignAt: {
-        default: Date.now()
+        type: Date,
+        default: Date.now
 
     }
 

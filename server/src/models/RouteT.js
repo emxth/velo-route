@@ -10,7 +10,11 @@ const RouteSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
-    transportType: "Bus" | "Van" | "Train",
+    transportType: {
+        type: String,
+        enum: ["Bus", "Van", "Train"],
+        required: true
+    },
     startLocation: {
         name: String,
         district: String,
@@ -30,8 +34,9 @@ const RouteSchema = new mongoose.Schema({
     }],
     distance: Number,
     estimatedDuration: Number,
-    updatedAt:{
-        default:Date.now()
+    updatedAt: {
+        type: Date,
+        default: Date.now
     }
 
 }, { timestamps: true });
