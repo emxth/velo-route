@@ -34,6 +34,7 @@ export class RouterService {
         };
 
     }
+
     //route create Srvice
     async createRoute(routeData) {
 
@@ -75,5 +76,59 @@ export class RouterService {
             logger.error("Route Not Created");
             throw err;
         }
+    }
+
+    //Read all routes
+    async getAllRoutes() {
+        return await repo.findAll();
+    }
+
+    //read specific routes with 
+    async getRouteByID(id) {
+
+        const route = await repo.findById(id);
+        if (!route) throw new Error("Route not Found");
+
+        return await this.enrichStops(route);
+    }
+
+
+
+    //stops with segment distance/duration
+    async enrichStops(route) {
+
+        //get and store retrieved route
+        const stops = route.stops;
+        const enrichedStop = [];
+
+        for (let i = 0; i < stops.length; i++) {
+
+            let segmentDistance = 0, segmentTime = 0;
+
+            if (1 > 0) {
+                const from = stops[i - 1];
+                const to = stops[i];
+
+                try {
+                    const getMaterics = calculateDistance(from, to);
+                    segmentDistance = getMaterics.distanceKM;
+                    segmentTime = await getMaterics.distanceTime;
+                } catch (err) {
+                    logger.error(`Distances not Found ${err}`);
+                }
+            }
+
+            enrichedStop.push({
+                ...stops[i]._doc,
+                segmentDistance,
+                segmentTime
+            });
+        }
+        return {
+            ...route._doc,
+            stops: enrichedStop
+        };
+
+
     }
 }
