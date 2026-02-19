@@ -5,6 +5,7 @@ import cors from "cors";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
+import departmentRoutes from "./routes/departmentRoutes.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
@@ -13,14 +14,18 @@ connectDB();
 
 const app = express();
 const rawOrigins = process.env.CORS_ORIGIN || "";
-const allowedOrigins = rawOrigins.split(",").map((s) => s.trim()).filter(Boolean);
+const allowedOrigins = rawOrigins
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 const corsOptions = {
-    origin: (origin, callback) => {
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) return callback(null, true);
-        return callback(new Error("CORS policy: origin not allowed"));
-    },
-    credentials: true,
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.length === 0 || allowedOrigins.includes(origin))
+      return callback(null, true);
+    return callback(new Error("CORS policy: origin not allowed"));
+  },
+  credentials: true,
 };
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -29,6 +34,7 @@ app.use(requestLogger);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/departments", departmentRoutes);
 
 app.get("/", (_req, res) => res.send("VeloRoute API running"));
 
