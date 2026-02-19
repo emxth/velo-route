@@ -17,3 +17,5 @@ router.put("/updateRoute/:id", (req, res) => controller.update(req, res));
 
 //route for delete
 router.delete("/clearRoute/:id", (req, res) => controller.delete(req, res));
+
+export { router as routeApi }
