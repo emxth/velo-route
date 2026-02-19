@@ -1,5 +1,5 @@
 import express from "express";
-import { RouteController } from "../controllers/routeController";
+import { RouteController } from "../controllers/routeController.js";
 
 const router = express.Router();
 const controller = new RouteController();
@@ -10,7 +10,7 @@ router.post("/addRoute", (req, res) => controller.create(req, res));
 router.get("/", (req, res) => controller.getAll(req, res));
 
 //route for get specific Route
-router.get("/routes/:id", (req, res) => controller.getById(req, res));
+router.get("/route/:id", (req, res) => controller.getById(req, res));
 
 //route for update
 router.put("/updateRoute/:id", (req, res) => controller.update(req, res));

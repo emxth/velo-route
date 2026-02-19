@@ -1,5 +1,5 @@
 import axios from "axios";
-import { meterToKm, secondsToMinutes } from "./distanceConverter";
+import { meterToKm, secondsToMinutes } from "./distanceConverter.js";
 
 async function calculateDistance(start, end) {
 
@@ -9,6 +9,7 @@ async function calculateDistance(start, end) {
     const response = await axios.get(url);
 
     const route = response.data.routes[0];
+    //console.log("Distance" + route.distance + 1);
 
     return {
         distanceKM: meterToKm(route.distance),

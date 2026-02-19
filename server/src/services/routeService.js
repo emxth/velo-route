@@ -1,7 +1,7 @@
-import { error } from "winston";
-import { RouteRepository } from "../repositories/RouteRepository";
-import calculateDistance from "../utils/calculateDistance";
-import { logger } from "../utils/logger";
+
+import { RouteRepository } from "../repositories/RouteRepository.js";
+import calculateDistance from "../utils/calculateDistance.js";
+import { logger } from "../utils/logger.js";
 
 const repo = new RouteRepository();
 
@@ -28,10 +28,11 @@ export class RouterService {
 
 
         }
+        console.log("getmertic" + totalDistance);
 
         return {
-            destinationKM: totalDistance,
-            destinationTime: totalTime
+            destinationKM: Number(totalDistance),
+            destinationTime: Number(totalTime)
         };
 
     }
@@ -40,10 +41,12 @@ export class RouterService {
     async createRoute(routeData) {
 
         try {
-            const { stops } = routeData;
+
+            const data = { ...routeData };
+            //const { stops } = routeData;
 
             //check route has stops
-            if (!stops || stops.length < 2) {
+            if (!data.stops || data.stops.length < 2) {
                 logger.error("Route must contain at least 2 stops", { error: "not found" });
                 throw new Error("Route must contain at least 2 stops");
             }
@@ -51,21 +54,27 @@ export class RouterService {
             let metrics = null;
 
             try {
-                metrics = await this.calculateRouteDistance(stops);
+                metrics = await this.calculateRouteDistance(data.stops);
+
+                console.log(metrics);
                 logger.info("Distance Calculated", {
                     routeName: routeData.name,
-                    distance: metrics.destinationKM
+                    distance: metrics?.destinationKM
                 });
             } catch (err) {
                 logger.warn("Distance Calculation Failed",
                     { error: err.message })
             }
 
+
+            const distance = Number(metrics?.destinationKM) || 0;
+            const estimatedDuration = Number(metrics?.destinationTime) || 0;
+
             //prepare data for pass repository
             const routeDataForRepo = {
-                routeData,
-                distance: metrics.destinationKM,
-                estimatedDuration: metrics.destinationTime
+                ...routeData,
+                distance: distance,
+                estimatedDuration: estimatedDuration,
             }
 
             //pass data to repor
@@ -96,8 +105,47 @@ export class RouterService {
     //update exist routes
     async updateRoute(id, data) {
 
+        //check and get existing data
+        const existRoute = await repo.findById(id);
+
+        if (!existRoute) throw new Error("Route Not Found");
+
+        let distance = existRoute.distance;
+        let estimatedDuration = existRoute.estimatedDuration;
+
+
+        //if user update stops calculate again
+        if (data.stops) {
+            if (data.stops.length < 2) {
+                throw new Error("Route must contain at least 2 stops");
+            }
+
+            try {
+                const matris = await this.calculateRouteDistance(data.stops);
+
+                distance = Number(matris?.destinationKM) || 0;
+                estimatedDuration = Number(matris?.destinationTime) || 0;
+
+                logger.info("Route distance and estimated time recalculated...", {
+                    routeId: id,
+                    distance,
+                    estimatedDuration
+                });
+            } catch (err) {
+                logger.warn("Recalculation Failed...", {
+                    error: err.message
+                })
+            }
+        }
+
+        const finalData = {
+            ...data,
+            distance,
+            estimatedDuration
+        }
+
         //update data
-        const route = await repo.update(id, data);
+        const route = await repo.update(id, finalData);
 
         if (!route) throw new Error("Route Not Found");
 
@@ -121,13 +169,13 @@ export class RouterService {
         const stops = route.stops;
         const enrichedStop = [];
 
-        for (let i = 0; i < stops.length; i++) {
+        for (let i = 0; i < stops.length - 1; i++) {
 
             let segmentDistance = 0, segmentTime = 0;
 
             if (1 > 0) {
-                const from = stops[i - 1];
-                const to = stops[i];
+                const from = stops[i];
+                const to = stops[i + 1];
 
                 try {
                     const getMaterics = calculateDistance(from, to);

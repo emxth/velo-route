@@ -8,7 +8,7 @@ const RouteSchema = new mongoose.Schema({
     routeNumber: {
         type: String,
         required: true,
-        unique: true
+
     },
     transportType: {
         type: String,

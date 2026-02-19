@@ -1,4 +1,4 @@
-import RouteT from "../models/RouteT";
+import RouteT from "../models/RouteT.js";
 
 export class RouteRepository {
 
