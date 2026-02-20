@@ -65,6 +65,7 @@ describe("CreateRoute", () => {
 describe("getRouteByID", () => {
     const service = new RouterService();
 
+    //test case 1 if user not enter id
     test("Should throw if not found", async () => {
         findByIDMock.mockResolvedValue(null);
 
@@ -73,6 +74,7 @@ describe("getRouteByID", () => {
             .toThrow("Route not Found");
     });
 
+    //test case 2 for if user give corect id
     test("should return route if found", async () => {
         findByIDMock.mockResolvedValue({
             _doc: {
@@ -87,6 +89,8 @@ describe("getRouteByID", () => {
         expect(findByIDMock).toHaveBeenCalledWith("123");
 
     });
+
+    //test case 3 for if user give invalid id format
     test("Should throw when ID is invalid format", async () => {
 
         const error = new Error("Invalid ID format");
@@ -98,4 +102,31 @@ describe("getRouteByID", () => {
             .toThrow("Invalid ID format");
     });
 
+})
+
+//test cases for test Update service
+describe("updateRoute", () => {
+    const service = new RouterService();
+
+    test("should recalculatue distance when stop change", async () => {
+        findByIDMock.mockResolvedValue({
+            distance: 10,
+            estimatedDuration: 20
+        });
+
+        service.calculateRouteDistance = jest.fn().mockResolvedValue({
+            destinationKM: 50,
+            estimatedDuration: 60
+        });
+
+        updateMock.mockResolvedValue({ name: "Updated" });
+
+        const result = await service.updateRoute("123", {
+            stops: [{}, {}]
+        });
+
+        expect(service.calculateRouteDistance).toHaveBeenCalled();
+        expect(updateMock).toHaveBeenCalled();
+        expect(result.name).toBe("Updated");
+    })
 })
