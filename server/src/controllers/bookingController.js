@@ -38,7 +38,6 @@ export const cancelBooking = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-//ERROR HERE
 export const payBooking = async (req, res, next) => {
   try {
     const session = await createCheckoutSession(req.params.id);

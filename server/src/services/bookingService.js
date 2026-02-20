@@ -1,6 +1,7 @@
 import * as bookingRepo from "../repositories/bookingRepository.js";
 import logger from "../config/logger.js";
 import { sendSMS } from "../services/notificationService.js";
+import { refundPayment } from "./paymentService.js";
 
 /*
  Service Layer = Business rules
@@ -42,15 +43,33 @@ export const getMyBookings = (userId) => bookingRepo.findByPassenger(userId);
 
 export const getAllBookings = () => bookingRepo.findAll();
 
+/*
+ Cancels a booking.
+ If payment already completed → trigger refund automatically.
+*/
 export const cancelBooking = async (bookingId, userId) => {
   const booking = await bookingRepo.findById(bookingId);
+
   if (!booking) throw new Error("Booking not found");
+
+  // Ensure only owner can cancel
   if (booking.passenger.toString() !== userId.toString()) {
     throw new Error("Unauthorized");
   }
 
+  /*
+   Refund only if payment already completed.
+  */
+  if (booking.paymentStatus === "PAID") {
+    await refundPayment(booking.paymentIntentId);
+    booking.paymentStatus = "REFUNDED";
+  }
+
   booking.bookingStatus = "CANCELLED";
-  await bookingRepo.update(booking);
+
+  // await bookingRepo.update(booking);
+  await booking.save();
+  
   logger.info(`Booking cancelled: ${booking._id} by user ${userId}`);
   return booking;
 };

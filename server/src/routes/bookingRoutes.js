@@ -1,6 +1,6 @@
 import express from "express";
 import { protect, authorize } from "../middleware/auth.js";
-import * as bookingController from "../controllers/bookingController.js";//ERROR HERE
+import * as bookingController from "../controllers/bookingController.js";
 
 const router = express.Router();
 
@@ -14,7 +14,8 @@ router.get("/me", protect, bookingController.getMyBookings);
 router.get("/", protect, authorize("admin"), bookingController.getAllBookings);
 
 // Cancel booking
-router.put("/:id/cancel", protect, bookingController.cancelBooking);
+// router.put("/:id/cancel", protect, bookingController.cancelBooking);
+router.delete("/:id/cancel", protect, cancelBooking);   
 
 // Start payment
 router.post("/:id/pay", protect, bookingController.payBooking);

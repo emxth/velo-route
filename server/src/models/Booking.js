@@ -70,11 +70,13 @@ const bookingSchema = new mongoose.Schema(
 
     paymentStatus: {
       type: String,
-      enum: ["UNPAID", "PAID", "FAILED"],
+      enum: ["UNPAID", "PAID", "FAILED", "REFUNDED"],
       default: "UNPAID",
     },
 
     stripeSessionId: String,
+
+    paymentIntentId: String, // REQUIRED to issue refund
   },
   { timestamps: true }
 );
