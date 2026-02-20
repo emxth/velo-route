@@ -130,3 +130,31 @@ describe("updateRoute", () => {
         expect(result.name).toBe("Updated");
     })
 })
+
+//test case for test delete operator
+describe("deleteRoute", () => {
+    const service = new RouterService();
+
+    //test record delete successfully
+    test("Should delete route", async () => {
+        deleteRouteMock.mockResolvedValue({ deleted: true });
+
+        const result = await service.deleteRoute("123");
+
+        expect(deleteRouteMock).toHaveBeenCalledWith("123");
+        expect(result).toEqual({
+            message: "Route deleted Successfully"
+        });
+    });
+
+    //test given is route is correct
+    test("Should throw error when route not found", async () => {
+        deleteRouteMock.mockResolvedValue(null);
+
+        await expect(service.deleteRoute("13"))
+            .rejects
+            .toThrow("Route not Found");
+    });
+
+
+})
