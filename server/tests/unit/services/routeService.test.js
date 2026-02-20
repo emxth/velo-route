@@ -61,4 +61,41 @@ describe("CreateRoute", () => {
     })
 })
 
-//
+// test case for get specific Route
+describe("getRouteByID", () => {
+    const service = new RouterService();
+
+    test("Should throw if not found", async () => {
+        findByIDMock.mockResolvedValue(null);
+
+        await expect(service.getRouteByID("bad-id"))
+            .rejects
+            .toThrow("Route not Found");
+    });
+
+    test("should return route if found", async () => {
+        findByIDMock.mockResolvedValue({
+            _doc: {
+                name: "Route 1",
+                stops: []
+            },
+            stops: []
+        });
+
+        const result = await service.getRouteByID("123");
+        expect(result.name).toBe("Route 1");
+        expect(findByIDMock).toHaveBeenCalledWith("123");
+
+    });
+    test("Should throw when ID is invalid format", async () => {
+
+        const error = new Error("Invalid ID format");
+        error.name = "CastError";
+        findByIDMock.mockRejectedValue(error);
+
+        await expect(service.getRouteByID("A11"))
+            .rejects
+            .toThrow("Invalid ID format");
+    });
+
+})
