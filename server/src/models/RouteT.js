@@ -30,10 +30,15 @@ const RouteSchema = new mongoose.Schema({
     stops: [{
         name: String,
         lat: Number,
-        lng: Number
+        lng: Number,
+        fareFromPrevious: {
+            type: Number,
+            default: 0
+        }
     }],
     distance: Number,
     estimatedDuration: Number,
+    estimatedFare: Number,
     updatedAt: {
         type: Date,
         default: Date.now
