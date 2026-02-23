@@ -12,6 +12,11 @@ export const createCheckoutSession = async (bookingId) => {
   const booking = await Booking.findById(bookingId);
   if (!booking) throw new Error("Booking not found");
 
+  // Prevent paying cancelled/confirmed bookings
+  if (booking.bookingStatus !== "PENDING") {
+    throw new Error("Only pending bookings can be paid");
+  }
+
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
     line_items: [{
@@ -28,7 +33,7 @@ export const createCheckoutSession = async (bookingId) => {
 
     //allows us to access payment intent
     expand: ["payment_intent"],
-    
+
   });
 
   booking.stripeSessionId = session.id;

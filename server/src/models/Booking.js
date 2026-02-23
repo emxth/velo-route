@@ -32,10 +32,23 @@ const bookingSchema = new mongoose.Schema(
       required: true,
     },
 
-    // Seat number (used for both)
-    seatNumber: {
-      type: String,
+    // Multiple seats booked in one transaction
+    seatNumbers: {
+      type: [String], // Array of seat labels (A1, A2, etc.)
       required: true,
+      validate: {
+        validator: function (value) {
+          return value.length > 0;
+        },
+        message: "At least one seat must be selected",
+      },
+    },
+
+    // Total seats booked (derived from seatNumbers.length)
+    seatCount: {
+      type: Number,
+      required: true,
+      min: 1,
     },
 
     // Only used when transportType = TRAIN
@@ -44,16 +57,16 @@ const bookingSchema = new mongoose.Schema(
     },
 
     fromLocation: {
-        type: String,
-        required: true
+      type: String,
+      required: true
     },
     toLocation: {
-        type: String,
-        required: true
+      type: String,
+      required: true
     },
     departureTime: {
-        type: Date,
-        required: true
+      type: Date,
+      required: true
     },
 
     // Payment amount
@@ -79,6 +92,15 @@ const bookingSchema = new mongoose.Schema(
     paymentIntentId: String, // REQUIRED to issue refund
   },
   { timestamps: true }
+);
+
+/*
+ Prevent same seat being booked twice for the same trip.
+ MongoDB will enforce uniqueness.
+*/
+bookingSchema.index(
+  { tripId: 1, seatNumbers: 1 },
+  { unique: true }
 );
 
 export default mongoose.model("Booking", bookingSchema);

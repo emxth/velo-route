@@ -14,3 +14,13 @@ export const findByPassenger = (userId) => Booking.find({ passenger: userId });
 export const findAll = () => Booking.find().populate("passenger", "name email");
 
 export const update = (booking) => booking.save();
+
+/*
+ Find if requested seats already exist for this trip
+*/
+export const findConflictingSeats = (tripId, seatNumbers) =>
+  Booking.find({
+    tripId,
+    seatNumbers: { $in: seatNumbers },
+    bookingStatus: { $ne: "CANCELLED" },
+  });
