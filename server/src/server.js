@@ -1,7 +1,7 @@
 
 import dotenv from "dotenv";
 dotenv.config();
-
+import { errorHandler } from "./middleware/errorHandler.js";
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
@@ -45,6 +45,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 
 app.get("/", (_req, res) => res.send("VeloRoute API running"));
+
+//Centralized error handler
+app.use(errorHandler);
 
 const port = process.env.PORT;
 app.listen(port, () => console.log(`Server running on port ${port}`));

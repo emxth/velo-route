@@ -2,6 +2,7 @@ import * as bookingRepo from "../repositories/bookingRepository.js";
 import logger from "../config/logger.js";
 import { sendSMS } from "../services/notificationService.js";
 import { refundPayment } from "./paymentService.js";
+import { ApiError } from "../utils/apiError.js";
 
 /*
  Service Layer = Business rules
@@ -207,11 +208,15 @@ export const updateBooking = async (bookingId, userId, data) => {
 //delete cancelled booking of a user 
 export const deleteBooking = async (bookingId, userId) => {
   const booking = await bookingRepo.findById(bookingId);
-  if (!booking) throw new Error("Booking not found");
+  if (!booking) throw new ApiError(404, "Booking not found");
 
-  if (booking.passenger.toString() !== userId.toString()) throw new Error("Unauthorized");
+  if (booking.passenger.toString() !== userId.toString()) {
+    throw new ApiError(403, "Unauthorized");
+  }
 
-  if (booking.bookingStatus !== "CANCELLED") throw new Error("Only cancelled bookings can be deleted");
+  if (booking.bookingStatus !== "CANCELLED") {
+    throw new ApiError(400, "Cannot delete a confirmed booking. Cancel it first.");
+  }
 
   await bookingRepo.deleteById(bookingId);
   return { message: "Booking deleted successfully" };
