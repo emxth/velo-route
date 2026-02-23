@@ -12,6 +12,8 @@ import AnalystPage from "./pages/AnalystPage";
 import Welcome from "./pages/Welcome";
 import Header from "./components/Header";
 import Profile from "./pages/Profile";
+import ComplaintsPage from "./pages/ComplaintsPage";
+import ComplaintDetailPage from "./pages/ComplaintDetailPage";
 
 const Unauthorized = () => <div>Unauthorized</div>;
 
@@ -48,6 +50,9 @@ function App() {
             <Route element={<ProtectedRoute roles={["analyst"]} />}>
               <Route path="/analyst" element={<AnalystPage />} />
             </Route>
+
+            <Route path="/complaints" element={<ComplaintsPage />} />
+            <Route path="/complaints/:id" element={<ComplaintDetailPage />} />
           </Route>
         </Route>
       </Routes>
