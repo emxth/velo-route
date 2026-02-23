@@ -1,9 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 
-const emptyForm = { kind: "complaint", category: "general", subject: "", message: "" };
+const emptyForm = {
+  kind: "complaint",
+  category: "general",
+  subject: "",
+  message: "",
+  location: { lat: "", lng: "", label: "" },
+};
 
 const ComplaintsPage = () => {
   const { user } = useAuth();
@@ -13,6 +19,12 @@ const ComplaintsPage = () => {
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // Location search state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [results, setResults] = useState([]);
+  const debounceRef = useRef(null);
 
   const load = async () => {
     setLoading(true);
@@ -30,19 +42,97 @@ const ComplaintsPage = () => {
     load();
   }, []);
 
+  const useMyLocation = () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation not supported");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setForm((f) => ({
+          ...f,
+          location: {
+            ...f.location,
+            lat: pos.coords.latitude.toFixed(6),
+            lng: pos.coords.longitude.toFixed(6),
+            label: "My location",
+          },
+        }));
+      },
+      () => setError("Unable to fetch current location")
+    );
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
     try {
       const path = form.kind === "feedback" ? "/complaints/feedback" : "/complaints";
-      await api.post(path, form);
+      const payload = {
+        kind: form.kind,
+        category: form.category,
+        subject: form.subject,
+        message: form.message,
+      };
+      const hasLat = form.location.lat !== "" && form.location.lat !== null && form.location.lat !== undefined;
+      const hasLng = form.location.lng !== "" && form.location.lng !== null && form.location.lng !== undefined;
+      if (hasLat && hasLng) {
+        payload.location = {
+          lat: Number(form.location.lat),
+          lng: Number(form.location.lng),
+          label: form.location.label,
+        };
+      }
+      await api.post(path, payload);
       setForm(emptyForm);
+      setSearchTerm("");
+      setResults([]);
       setSuccess("Submitted successfully");
       load();
     } catch (err) {
       setError(err.response?.data?.message || "Submit failed");
     }
+  };
+
+  const searchLocation = (value) => {
+    setSearchTerm(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!value || value.length < 3) {
+      setResults([]);
+      return;
+    }
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const resp = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+            value
+          )}&format=json&limit=5`
+        );
+        const data = await resp.json();
+        setResults(
+          data.map((r) => ({
+            label: r.display_name,
+            lat: parseFloat(r.lat).toFixed(6),
+            lng: parseFloat(r.lon).toFixed(6),
+          }))
+        );
+      } catch (e) {
+        setError("Location search failed");
+      } finally {
+        setSearching(false);
+      }
+    }, 400);
+  };
+
+  const selectResult = (r) => {
+    setForm((f) => ({
+      ...f,
+      location: { lat: r.lat, lng: r.lng, label: r.label },
+    }));
+    setSearchTerm(r.label);
+    setResults([]);
   };
 
   return (
@@ -117,6 +207,87 @@ const ComplaintsPage = () => {
               />
             </div>
 
+            <div className="p-3 space-y-2 border rounded-lg bg-neutral-50">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-medium">Attach Location (optional)</div>
+                <button type="button" className="text-sm text-primary-600" onClick={useMyLocation}>
+                  Use my location
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs text-neutral-600">Search place</label>
+                <input
+                  className="input-field"
+                  value={searchTerm}
+                  onChange={(e) => searchLocation(e.target.value)}
+                  placeholder="e.g. Main Street, City"
+                />
+                {searching && <div className="text-xs text-neutral-500">Searching…</div>}
+                {results.length > 0 && (
+                  <div className="overflow-auto text-sm bg-white border rounded-md max-h-40">
+                    {results.map((r) => (
+                      <button
+                        key={`${r.lat}-${r.lng}`}
+                        type="button"
+                        className="w-full px-3 py-2 text-left hover:bg-neutral-100"
+                        onClick={() => selectResult(r)}
+                      >
+                        {r.label}
+                        <div className="text-[11px] text-neutral-500">
+                          {r.lat}, {r.lng}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs text-neutral-600">Latitude</label>
+                  <input
+                    className="input-field"
+                    value={form.location.lat}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, location: { ...f.location, lat: e.target.value } }))
+                    }
+                    placeholder="e.g. 7.8731"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-neutral-600">Longitude</label>
+                  <input
+                    className="input-field"
+                    value={form.location.lng}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, location: { ...f.location, lng: e.target.value } }))
+                    }
+                    placeholder="e.g. 80.7718"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs text-neutral-600">Location label (optional)</label>
+                <input
+                  className="input-field"
+                  value={form.location.label}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, location: { ...f.location, label: e.target.value } }))
+                  }
+                  placeholder="e.g. Near main road, bridge"
+                />
+              </div>
+
+              {(form.location.lat || form.location.lng) && (
+                <div className="text-xs text-neutral-700">
+                  Selected: {form.location.lat}, {form.location.lng}{" "}
+                  {form.location.label ? `(${form.location.label})` : ""}
+                </div>
+              )}
+            </div>
+
             <button className="w-full btn-secondary" type="submit">
               Submit
             </button>
@@ -144,6 +315,12 @@ const ComplaintsPage = () => {
                   <div className="text-xs text-neutral-600">
                     {c.kind} · {c.category} · {c.status}
                   </div>
+                  {c.location && (
+                    <div className="text-xs text-neutral-500">
+                      {c.location.lat}, {c.location.lng}{" "}
+                      {c.location.label ? `(${c.location.label})` : ""}
+                    </div>
+                  )}
                 </div>
                 <div className="text-xs text-neutral-500">
                   {new Date(c.createdAt).toLocaleDateString()}

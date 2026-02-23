@@ -14,6 +14,28 @@ const ensureValidId = (id) => {
   }
 };
 
+const normalizeLocation = (loc) => {
+  if (!loc) return undefined;
+  const latRaw = loc.lat ?? loc.latitude;
+  const lngRaw = loc.lng ?? loc.longitude;
+
+  // Only accept when both are provided (allow 0)
+  const hasLat = latRaw !== undefined && latRaw !== null && latRaw !== "";
+  const hasLng = lngRaw !== undefined && lngRaw !== null && lngRaw !== "";
+  if (!hasLat && !hasLng) return undefined;      // no location provided
+  if (!hasLat || !hasLng) throw new AppError("Invalid location", 400);
+
+  const lat = Number(latRaw);
+  const lng = Number(lngRaw);
+  if (Number.isNaN(lat) || Number.isNaN(lng)) throw new AppError("Invalid location", 400);
+
+  return {
+    type: "Point",
+    coordinates: [lng, lat],
+    label: loc.label || loc.name || undefined,
+  };
+};
+
 const shape = (doc) =>
   doc && {
     id: doc._id,
@@ -24,11 +46,18 @@ const shape = (doc) =>
     message: doc.message,
     status: doc.status,
     response: doc.response,
+    location: doc.location
+      ? {
+        lat: doc.location.coordinates?.[1],
+        lng: doc.location.coordinates?.[0],
+        label: doc.location.label,
+      }
+      : undefined,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };
 
-export const submitComplaint = async ({ userId, kind, category, subject, message }) => {
+export const submitComplaint = async ({ userId, kind, category, subject, message, location }) => {
   if (!subject || !message) throw new AppError("Subject and message are required", 400);
   const doc = await createComplaint({
     user: userId,
@@ -36,6 +65,7 @@ export const submitComplaint = async ({ userId, kind, category, subject, message
     category,
     subject,
     message,
+    location: normalizeLocation(location),
   });
   return shape(doc);
 };

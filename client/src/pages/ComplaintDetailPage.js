@@ -86,6 +86,26 @@ const ComplaintDetailPage = () => {
         </div>
       </div>
 
+      {/* {item.location && (
+        <div className="space-y-1 card">
+          <div className="font-semibold">Location</div>
+          <div className="text-sm text-neutral-800">
+            {item.location.lat}, {item.location.lng}{" "}
+            {item.location.label ? `(${item.location.label})` : ""}
+          </div>
+        </div>
+      )} */}
+
+      {item.location?.lat !== undefined && item.location?.lng !== undefined && (
+        <div className="space-y-1 card">
+          <div className="font-semibold">Location</div>
+          <div className="text-sm text-neutral-800">
+            {item.location.lat}, {item.location.lng}{" "}
+            {item.location.label ? `(${item.location.label})` : ""}
+          </div>
+        </div>
+      )}
+
       {item.response?.text && (
         <div className="space-y-1 card">
           <div className="font-semibold">Admin response</div>
