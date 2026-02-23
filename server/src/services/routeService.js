@@ -69,12 +69,14 @@ export class RouterService {
 
             const distance = Number(metrics?.destinationKM) || 0;
             const estimatedDuration = Number(metrics?.destinationTime) || 0;
+            const estimatedFare = Number(data.stops[data.stops.length - 1].fareFromPrevious);
 
             //prepare data for pass repository
             const routeDataForRepo = {
                 ...routeData,
                 distance: distance,
                 estimatedDuration: estimatedDuration,
+                estimatedFare: estimatedFare
             }
 
             //pass data to repor

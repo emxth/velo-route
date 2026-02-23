@@ -7,13 +7,18 @@ const RouteSchema = new mongoose.Schema({
     },
     routeNumber: {
         type: String,
-        required: true,
 
     },
     transportType: {
         type: String,
         enum: ["Bus", "Van", "Train"],
         required: true
+    },
+    busNumber: {
+        type: String,
+        required: function () {
+            return this.transportType === "Bus";
+        }
     },
     startLocation: {
         name: String,
