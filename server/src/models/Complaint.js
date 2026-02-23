@@ -13,6 +13,18 @@ const complaintSchema = new mongoose.Schema(
       respondedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
       respondedAt: { type: Date },
     },
+    location: {
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point",
+      },
+      coordinates: {
+        type: [Number], // [lng, lat]
+        index: "2dsphere",
+      },
+      label: { type: String },
+    },
   },
   { timestamps: true }
 );

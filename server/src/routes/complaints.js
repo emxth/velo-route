@@ -20,6 +20,7 @@ router.post("/", protect, async (req, res, next) => {
       category: req.body.category,
       subject: req.body.subject,
       message: req.body.message,
+      location: req.body.location,
     });
     res.status(201).json(payload);
   } catch (err) { next(err); }
@@ -34,6 +35,7 @@ router.post("/feedback", protect, async (req, res, next) => {
       category: req.body.category,
       subject: req.body.subject,
       message: req.body.message,
+      location: req.body.location,
     });
     res.status(201).json(payload);
   } catch (err) { next(err); }

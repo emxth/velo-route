@@ -3,7 +3,13 @@ import { Link } from "react-router-dom";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 
-const emptyForm = { kind: "complaint", category: "general", subject: "", message: "" };
+const emptyForm = {
+  kind: "complaint",
+  category: "general",
+  subject: "",
+  message: "",
+  location: { lat: "", lng: "", label: "" },
+};
 
 const ComplaintsPage = () => {
   const { user } = useAuth();
@@ -30,13 +36,46 @@ const ComplaintsPage = () => {
     load();
   }, []);
 
+  const useMyLocation = () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation not supported");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setForm((f) => ({
+          ...f,
+          location: {
+            ...f.location,
+            lat: pos.coords.latitude.toFixed(6),
+            lng: pos.coords.longitude.toFixed(6),
+          },
+        }));
+      },
+      () => setError("Unable to fetch current location")
+    );
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
     try {
       const path = form.kind === "feedback" ? "/complaints/feedback" : "/complaints";
-      await api.post(path, form);
+      const payload = {
+        kind: form.kind,
+        category: form.category,
+        subject: form.subject,
+        message: form.message,
+      };
+      if (form.location.lat && form.location.lng) {
+        payload.location = {
+          lat: Number(form.location.lat),
+          lng: Number(form.location.lng),
+          label: form.location.label,
+        };
+      }
+      await api.post(path, payload);
       setForm(emptyForm);
       setSuccess("Submitted successfully");
       load();
@@ -117,6 +156,55 @@ const ComplaintsPage = () => {
               />
             </div>
 
+            <div className="p-3 space-y-2 border rounded-lg bg-neutral-50">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-medium">Attach Location (optional)</div>
+                <button type="button" className="text-sm text-primary-600" onClick={useMyLocation}>
+                  Use my location
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs text-neutral-600">Latitude</label>
+                  <input
+                    className="input-field"
+                    value={form.location.lat}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, location: { ...f.location, lat: e.target.value } }))
+                    }
+                    placeholder="e.g. 7.8731"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-neutral-600">Longitude</label>
+                  <input
+                    className="input-field"
+                    value={form.location.lng}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, location: { ...f.location, lng: e.target.value } }))
+                    }
+                    placeholder="e.g. 80.7718"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-neutral-600">Location label (optional)</label>
+                <input
+                  className="input-field"
+                  value={form.location.label}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, location: { ...f.location, label: e.target.value } }))
+                  }
+                  placeholder="e.g. Near main road, bridge"
+                />
+              </div>
+              {(form.location.lat && form.location.lng) && (
+                <div className="text-xs text-neutral-700">
+                  Selected: {form.location.lat}, {form.location.lng} {form.location.label ? `(${form.location.label})` : ""}
+                </div>
+              )}
+            </div>
+
             <button className="w-full btn-secondary" type="submit">
               Submit
             </button>
@@ -144,6 +232,11 @@ const ComplaintsPage = () => {
                   <div className="text-xs text-neutral-600">
                     {c.kind} · {c.category} · {c.status}
                   </div>
+                  {c.location && (
+                    <div className="text-xs text-neutral-500">
+                      {c.location.lat}, {c.location.lng} {c.location.label ? `(${c.location.label})` : ""}
+                    </div>
+                  )}
                 </div>
                 <div className="text-xs text-neutral-500">
                   {new Date(c.createdAt).toLocaleDateString()}
