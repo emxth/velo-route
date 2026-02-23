@@ -5,6 +5,7 @@ import cors from "cors";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
+import complaintRoutes from "./routes/complaints.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { routeApi } from "./routes/routesRoute.js";
@@ -31,6 +32,7 @@ app.use(requestLogger);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/routes", routeApi);
+app.use("/api/complaints", complaintRoutes);
 
 app.get("/", (_req, res) => res.send("VeloRoute API running"));
 
