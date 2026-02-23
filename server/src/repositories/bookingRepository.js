@@ -19,8 +19,12 @@ export const update = (booking) => booking.save();
  Find if requested seats already exist for this trip
 */
 export const findConflictingSeats = (tripId, seatNumbers) =>
-  Booking.find({
-    tripId,
-    seatNumbers: { $in: seatNumbers },
-    bookingStatus: { $ne: "CANCELLED" },
-  });
+    Booking.find({
+        tripId,
+        seatNumbers: { $in: seatNumbers },
+        bookingStatus: { $ne: "CANCELLED" },
+    });
+
+export const deleteById = (bookingId) => Booking.findByIdAndDelete(bookingId);
+
+export const deleteManyByPassenger = (userId) => Booking.deleteMany({ passenger: userId, bookingStatus: "CANCELLED" });

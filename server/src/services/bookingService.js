@@ -203,3 +203,22 @@ export const updateBooking = async (bookingId, userId, data) => {
 
   return booking;
 };
+
+//delete cancelled booking of a user 
+export const deleteBooking = async (bookingId, userId) => {
+  const booking = await bookingRepo.findById(bookingId);
+  if (!booking) throw new Error("Booking not found");
+
+  if (booking.passenger.toString() !== userId.toString()) throw new Error("Unauthorized");
+
+  if (booking.bookingStatus !== "CANCELLED") throw new Error("Only cancelled bookings can be deleted");
+
+  await bookingRepo.deleteById(bookingId);
+  return { message: "Booking deleted successfully" };
+};
+
+//delete all - clear booking history
+export const clearBookingHistory = async (userId) => {
+  await bookingRepo.deleteManyByPassenger(userId);
+  return { message: "Cancelled booking history cleared" };
+};

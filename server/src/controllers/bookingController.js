@@ -67,3 +67,21 @@ export const confirmBooking = async (req, res, next) => {
     next(err);
   }
 };
+
+export const deleteBookingController = async (req, res, next) => {
+  try {
+    const result = await bookingService.deleteBooking(req.params.id, req.user._id);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const clearBookingHistoryController = async (req, res, next) => {
+  try {
+    const result = await bookingService.clearBookingHistory(req.user._id);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+};
