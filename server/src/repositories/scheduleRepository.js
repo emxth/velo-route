@@ -17,17 +17,37 @@ export class ScheduleRepository {
             .populate("vehicleId")
     }
 
-    async findLastByVahicle(vehicleId) {
-        return await Schedule.findOne({ vehicleId, active: true })
+    async findLastByVahicle(vehicleID) {
+        return await Schedule.findOne({ vehicleID, active: true })
     };
 
     async findConflict(vehicleId, start, end) {
         return await Schedule.findOne({
-            vehicleId,
+            vehicleID: vehicleId,
             depatureTime: { $lt: end },
             arrivalTime: { $gt: start },
-            active: true
-        });
+            active: true,
+            status: { $in: ["SCHEDULED", "IN_PROGRESS"] },
+
+            $or: [
+
+                //new trip start during existing trip
+                {
+                    depatureTime: { $lte: start },
+                    arrivalTime: { $gt: start }
+                },
+                //new trip ends existing trip
+                {
+                    depatureTime: { $lt: end },
+                    arrivalTime: { $gte: end }
+                },
+                //or check schedule trip completely in existing trip
+                {
+                    depatureTime: { $lte: start },
+                    arrivalTime: { $gte: end }
+                }
+            ]
+        }).sort({ depatureTime: 1 });
     }
 
     async deactivate(id) {
