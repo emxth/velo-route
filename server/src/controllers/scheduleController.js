@@ -18,4 +18,27 @@ export class ScheduleController {
         }
     }
 
+    //get all schedules
+    async getAllSchedules(req, res) {
+        try {
+            const schedule = await this.scheduleService.getAllSchedule(req.query);
+            res.status(201).json({ message: "Schedules retrieved successfully", schedule });
+            logger.info("Retreiv all schedules");
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+            logger.error("Something went to error", err)
+        }
+    }
+
+    //get specific schedules
+    async getSpecificSchedule(req, res) {
+        try {
+            const schedule = await this.scheduleService.getScheduleById(req.params.id);
+            res.status(200).json({ message: "Successfully retrieved schedule", schedule });
+
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    }
+
 }

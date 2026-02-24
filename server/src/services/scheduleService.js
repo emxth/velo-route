@@ -8,6 +8,7 @@ export class ScheduleService {
         this.routeRepo = routeRep;
     }
 
+    //function for new schedule
     async createSchedule(scheduleData) {
 
         const data = { ...scheduleData };
@@ -25,6 +26,7 @@ export class ScheduleService {
         //check vehicle last trip
         const lastTrip = await this.scheduleRepo.findLastByVahicle(scheduleData.vehicleID);
 
+        //check vehicle availability
         if (lastTrip && start < lastTrip.arrivalTime) {
             throw new Error("Vehicle still busy from previous trip");
 
@@ -49,4 +51,20 @@ export class ScheduleService {
         })
 
     }
+
+    //function for retrieve all schedule
+    async getAllSchedule(filter) {
+        return this.scheduleRepo.findAll();
+    }
+
+    //function for retreive specific schedule
+    async getScheduleById(id) {
+        const schedule = await this.scheduleRepo.findById(id);
+        if (!schedule) {
+            throw new Error("Schedule not found", 404);
+        }
+        return schedule;
+    }
+
+
 }

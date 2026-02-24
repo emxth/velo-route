@@ -8,13 +8,13 @@ export class ScheduleRepository {
     async findAll(filter = {}) {
         return await Schedule.find({ ...filter, active: true })
             .populate("routeId")
-            .populate("vehicleId")
+            .populate("vehicleID")
     };
 
     async findById(id) {
         return await Schedule.findById(id)
             .populate("routeId")
-            .populate("vehicleId")
+            .populate("vehicleID")
     }
 
     async findLastByVahicle(vehicleID) {

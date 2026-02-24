@@ -10,6 +10,7 @@ import { requestLogger } from "./middleware/requestLogger.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { routeApi } from "./routes/routesRoute.js";
 import { ScheduleRoute } from "./routes/scheduleRoute.js";
+import Vehicle from "./models/Vehicle.js";
 
 dotenv.config({ path: "../.env" });
 connectDB();

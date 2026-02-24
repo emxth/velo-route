@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const ScheduleSchema = new mongoose.Schema({
     routeId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "RouteT",
+        ref: "Route",
         required: true
     },
     vehicleID: {
