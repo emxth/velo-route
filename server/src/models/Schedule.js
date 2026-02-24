@@ -12,17 +12,24 @@ const ScheduleSchema = new mongoose.Schema({
         required: true
     },
     depatureTime: {
-        type: String,
+        type: Date,
         required: true
     },
     arrivalTime: {
-        type: String,
+        type: Date,
         required: true
     },
     frequency: {
         type: String,
-        enum: ["DAILY", "WEEKEND", "HOLIDAY"]
+        enum: ["DAILY", "WEEKEND", "HOLIDAY"],
+        default: "DAILY"
     },
+    status: {
+        type: String,
+        enum: ["SCHEDULED", "IN_PROGRESS", "COMPLETED", "DELAYED"],
+        default: "SCHEDULED"
+    },
+
     active: {
         type: Boolean,
         default: true
