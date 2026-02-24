@@ -1,48 +1,22 @@
-import { User } from "../models/User.js";
-import { generateToken } from "../utils/generateToken.js";
 import logger from "../config/logger.js";
+import { registerUser, loginUser } from "../services/authService.js";
 
-export const register = async (req, res) => {
+export const register = async (req, res, next) => {
   try {
-    const { name, email, password, role } = req.body;
-    if (!name || !email || !password)
-      return res.status(400).json({ message: "Missing fields" });
-
-    const exists = await User.findOne({ email });
-    if (exists) return res.status(409).json({ message: "Email already used" });
-
-    const user = await User.create({ name, email, password, role });
-    const token = generateToken(user._id, user.role);
-
-    logger.info("user_registered", { userId: user._id.toString(), email: user.email, role: user.role });
-
-    return res.status(201).json({
-      token,
-      user: { id: user._id, name: user.name, email: user.email, role: user.role },
-    });
+    const data = await registerUser(req.body);
+    logger.info("user_registered", { userId: data.user.id, email: data.user.email, role: data.user.role });
+    return res.status(201).json(data);
   } catch (err) {
-    logger.error("register_failed", { error: err.message, stack: err.stack });
-    return res.status(500).json({ message: "Server error" });
+    return next(err);
   }
 };
 
-export const login = async (req, res) => {
+export const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
-    if (!user || !(await user.matchPassword(password)))
-      return res.status(401).json({ message: "Invalid credentials" });
-
-    const token = generateToken(user._id, user.role);
-
-    logger.info("user_logged_in", { userId: user._id.toString(), email: user.email, role: user.role });
-
-    return res.json({
-      token,
-      user: { id: user._id, name: user.name, email: user.email, role: user.role },
-    });
+    const data = await loginUser(req.body);
+    logger.info("user_logged_in", { userId: data.user.id, email: data.user.email, role: data.user.role });
+    return res.json(data);
   } catch (err) {
-    logger.error("login_failed", { error: err.message, stack: err.stack });
-    return res.status(500).json({ message: "Server error" });
+    return next(err);
   }
 };

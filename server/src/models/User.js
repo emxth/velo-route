@@ -1,22 +1,14 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
-const roles = ["admin", "operator", "driver", "analyst", "user"];
+export const allowedRoles = ["admin", "operator", "driver", "analyst", "user"];
 
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true },
-    role: { type: String, enum: roles, default: "user" },
-    allowedNav: {
-      type: [String],
-      default: function () {
-        return this.role === "admin"
-          ? ["dashboard", "admin", "operator", "driver", "analyst"]
-          : ["dashboard"];
-      },
-    },
+    role: { type: String, enum: allowedRoles, default: "user" },
   },
   { timestamps: true }
 );
@@ -32,4 +24,3 @@ userSchema.methods.matchPassword = function (entered) {
 };
 
 export const User = mongoose.model("User", userSchema);
-export const allowedRoles = roles;

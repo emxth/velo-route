@@ -1,20 +1,19 @@
 
 import dotenv from "dotenv";
-dotenv.config();
-import { errorHandler } from "./middleware/errorHandler.js";
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
+dotenv.config();
 import { connectDB } from "./config/db.js";
+import { errorHandler } from "./middleware/errorHandler.js";
+import { requestLogger } from "./middleware/requestLogger.js";
+import { errorHandler } from "./middleware/errorHandler.js";
+
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
-
-
-//Booking and Payment routes
 import bookingRoutes from "./routes/bookingRoutes.js";
-
-import { requestLogger } from "./middleware/requestLogger.js";
-
+import complaintRoutes from "./routes/complaints.js";
+import { routeApi } from "./routes/routesRoute.js";
 
 connectDB();
  
@@ -24,11 +23,8 @@ const rawOrigins = process.env.CORS_ORIGIN || "";
 const allowedOrigins = rawOrigins.split(",").map((s) => s.trim()).filter(Boolean);
 const corsOptions = {
     origin: (origin, callback) => {
-        // Allow non-browser requests (e.g., Postman) which have no origin
         if (!origin) return callback(null, true);
-        if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        }
+        if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) return callback(null, true);
         return callback(new Error("CORS policy: origin not allowed"));
     },
     credentials: true,
@@ -38,11 +34,15 @@ app.use(express.json());
 if (process.env.NODE_ENV !== "production") app.use(morgan("dev"));
 app.use(requestLogger);
 
-//Booking route
-app.use("/api/bookings", bookingRoutes);
-
+// User routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+// Route routes
+app.use("/api/routes", routeApi);
+// Complaints route
+app.use("/api/complaints", complaintRoutes);
+// Booking route
+app.use("/api/bookings", bookingRoutes);
 
 app.get("/", (_req, res) => res.send("VeloRoute API running"));
 
