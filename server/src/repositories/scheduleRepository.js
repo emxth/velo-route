@@ -58,6 +58,10 @@ export class ScheduleRepository {
         )
     }
 
+    async update(id, data) {
+        return Schedule.findByIdAndUpdate(id, data, { new: true });
+    }
+
     async deleteShedule(id) {
         return await Schedule.findByIdAndDelete(id);
     }

@@ -41,4 +41,16 @@ export class ScheduleController {
         }
     }
 
+    //function for scheule update
+    async updateSchedule(req, res) {
+        try {
+            const schedule = await this.scheduleService.updateSchedual(req.params.id, req.body);
+            res.status(200).json({ message: "Update Schedule Successfully", schedule });
+            logger.info("Successfully")
+        } catch (err) {
+            res.status(400).json({ message: "Update unsuccessfully...", error: err.message });
+            logger.error("Update unsuccessfully...", err);
+        }
+    }
+
 }

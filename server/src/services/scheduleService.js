@@ -1,5 +1,6 @@
 import { RouteRepository } from "../repositories/RouteRepository.js";
 import { ScheduleRepository } from "../repositories/scheduleRepository.js";
+import { logger } from "../utils/logger.js";
 
 export class ScheduleService {
 
@@ -64,6 +65,35 @@ export class ScheduleService {
             throw new Error("Schedule not found", 404);
         }
         return schedule;
+    }
+
+    //function for update schedules
+    async updateSchedual(id, data) {
+
+        //check and get existing data
+        const existing = await this.scheduleRepo.findById(id);
+
+        if (!existing) throw new Error("Schedule not Found", 404);
+
+        //get Route details from route table
+        const route = await this.routeRepo.findById(existing.routeId || data.routeId);
+        if (!route) throw new Error("Route not Found");
+
+        //when the time/vehicle change check conflicts
+        const newStart = new Date(data.depatureTime || existing.depatureTime);
+        const duration = route.estimatedDuration;
+        const newEnd = new Date(newStart.getTime() + duration * 60000);
+        const vehicleId = data.vehicleID || existing.vehicleID;
+
+        const conflict = await this.scheduleRepo.findConflict(vehicleId, newStart, newEnd);
+        if (conflict) throw new Error("Vehicle Busy...", 400);
+
+        const updateData = {
+            ...data,
+            ...(data.depatureTime && { arrivalTime: newEnd })
+        }
+        const updated = await this.scheduleRepo.update(id, updateData);
+        return updated;
     }
 
 

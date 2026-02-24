@@ -14,5 +14,6 @@ export const ScheduleRoute = () => {
     router.post("/addSchedule", controller.create.bind(controller));
     router.get("/", controller.getAllSchedules.bind(controller));
     router.get("/:id", controller.getSpecificSchedule.bind(controller));
+    router.put("/updateSchedule/:id", controller.updateSchedule.bind(controller));
     return router;
 }
