@@ -12,8 +12,13 @@ export const ScheduleRoute = () => {
 
     //route for create Scheduling
     router.post("/addSchedule", controller.create.bind(controller));
+    //route for retrieve Schedules
     router.get("/", controller.getAllSchedules.bind(controller));
+    //route for specific Schedules
     router.get("/:id", controller.getSpecificSchedule.bind(controller));
+    //route for update Schedule
     router.put("/updateSchedule/:id", controller.updateSchedule.bind(controller));
+    //route for delete schedule
+    router.delete("/remove/:id", controller.delete.bind(controller));
     return router;
 }

@@ -96,5 +96,12 @@ export class ScheduleService {
         return updated;
     }
 
+    //function for delete
+    async deleteSchedule(id) {
+        const deleted = await this.scheduleRepo.deleteShedule(id);
+        if (!deleted) throw new Error("Schedule not found", 400);
+        return deleted;
+    }
+
 
 }
