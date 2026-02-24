@@ -23,7 +23,7 @@ export class ScheduleService {
         const end = new Date(start.getTime() + duration * 60000);
 
         //check vehicle last trip
-        const lastTrip = await this.scheduleRepo.findLastByVahicle(scheduleData.vehicleId);
+        const lastTrip = await this.scheduleRepo.findLastByVahicle(scheduleData.vehicleID);
 
         if (lastTrip && start < lastTrip.arrivalTime) {
             throw new Error("Vehicle still busy from previous trip");
@@ -32,7 +32,7 @@ export class ScheduleService {
 
         //check any conflict detection
         const conflict = await this.scheduleRepo.findConflict(
-            scheduleData.vehicleId,
+            scheduleData.vehicleID,
             start,
             end
         );
@@ -43,7 +43,7 @@ export class ScheduleService {
 
         return this.scheduleRepo.create({
             ...scheduleData,
-            departureTime: start,
+            depatureTime: start,
             arrivalTime: end
 
         })
