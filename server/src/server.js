@@ -9,6 +9,7 @@ import complaintRoutes from "./routes/complaints.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { routeApi } from "./routes/routesRoute.js";
+import { ScheduleRoute } from "./routes/scheduleRoute.js";
 
 dotenv.config({ path: "../.env" });
 connectDB();
@@ -33,7 +34,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/routes", routeApi);
 app.use("/api/complaints", complaintRoutes);
-
+app.use("/api/schedules", ScheduleRoute());
 app.get("/", (_req, res) => res.send("VeloRoute API running"));
 
 // centralized error handler

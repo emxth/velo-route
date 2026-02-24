@@ -1,8 +1,11 @@
+import { RouteRepository } from "../repositories/RouteRepository.js";
+import { ScheduleRepository } from "../repositories/scheduleRepository.js";
+
 export class ScheduleService {
 
-    constructor(scheduleRepo, routeRepo) {
-        this.scheduleRepo = scheduleRepo;
-        this.routeRepo = routeRepo;
+    constructor(repo = new ScheduleRepository, routeRep = new RouteRepository) {
+        this.scheduleRepo = repo;
+        this.routeRepo = routeRep;
     }
 
     async createSchedule(scheduleData) {

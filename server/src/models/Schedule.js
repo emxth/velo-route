@@ -29,7 +29,6 @@ const ScheduleSchema = new mongoose.Schema({
         enum: ["SCHEDULED", "IN_PROGRESS", "COMPLETED", "DELAYED"],
         default: "SCHEDULED"
     },
-
     active: {
         type: Boolean,
         default: true

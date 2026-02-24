@@ -1,4 +1,4 @@
-import { logger } from "../utils/logger";
+import { logger } from "../utils/logger.js";
 
 export class ScheduleController {
 
@@ -10,6 +10,7 @@ export class ScheduleController {
     async create(req, res) {
         try {
             const result = await this.scheduleService.createSchedule(req.body);
+            logger.info("Schedule Created");
             res.status(201).json(result);
         } catch (err) {
             logger.error(err.message);
