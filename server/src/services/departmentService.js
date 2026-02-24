@@ -42,9 +42,26 @@ export const getDepartmentById = async (id) => {
   return department;
 };
 
+<<<<<<< Updated upstream
 export const getAllDepartments = async () => {
   const departments = await departmentRepo.findAll();
   return departments;
+=======
+export const getAllDepartments = async (page = 1, limit = 10) => {
+  const skip = (page - 1) * limit;
+  const departments = await departmentRepo.findAll({}, skip, limit);
+  const total = await departmentRepo.countDocuments();
+
+  return {
+    data: departments,
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total,
+      pages: Math.ceil(total / limit),
+    },
+  };
+>>>>>>> Stashed changes
 };
 
 export const updateDepartment = async (id, adminId, data) => {

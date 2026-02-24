@@ -60,6 +60,10 @@ const DepartmentSchema = new mongoose.Schema(
         "Sabaragamuwa",
       ],
       message: "{VALUE} is not a valid region",
+<<<<<<< Updated upstream
+=======
+      required: [true, "Region is required"],
+>>>>>>> Stashed changes
     },
 
     status: {
@@ -80,12 +84,16 @@ const DepartmentSchema = new mongoose.Schema(
       ref: "User",
     },
   },
+<<<<<<< Updated upstream
   {
     timestamps: true,
     //Include virtuals when converting to JSON
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
   },
+=======
+  { timestamps: true },
+>>>>>>> Stashed changes
 );
 
 //Index for better query performance
