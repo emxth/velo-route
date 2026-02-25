@@ -17,7 +17,7 @@ export class ScheduleRepository {
             .populate("vehicleID")
     }
 
-    async findLastByVahicle(vehicleID) {
+    async findLastByVehicle(vehicleID) {
         return await Schedule.findOne({ vehicleID, active: true })
     };
 

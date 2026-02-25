@@ -27,7 +27,7 @@ export class ScheduleController {
             logger.info("Retreiv all schedules");
         } catch (err) {
             res.status(500).json({ error: err.message });
-            logger.error("Something went to error", err)
+            logger.error("Something went to error", err);
         }
     }
 
@@ -36,7 +36,7 @@ export class ScheduleController {
         try {
             const schedule = await this.scheduleService.getScheduleById(req.params.id);
             res.status(200).json({ message: "Successfully retrieved schedule", schedule });
-
+            logger.info("Successfully Retrieved Specific schedule")
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
@@ -47,7 +47,7 @@ export class ScheduleController {
         try {
             const schedule = await this.scheduleService.updateSchedual(req.params.id, req.body);
             res.status(200).json({ message: "Update Schedule Successfully", schedule });
-            logger.info("Successfully")
+            logger.info("Successfully Updated")
         } catch (err) {
             res.status(400).json({ message: "Update unsuccessfully...", error: err.message });
             logger.error("Update unsuccessfully...", err);

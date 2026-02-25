@@ -25,7 +25,7 @@ export class ScheduleService {
         const end = new Date(start.getTime() + duration * 60000);
 
         //check vehicle last trip
-        const lastTrip = await this.scheduleRepo.findLastByVahicle(scheduleData.vehicleID);
+        const lastTrip = await this.scheduleRepo.findLastByVehicle(scheduleData.vehicleID);
 
         //check vehicle availability
         if (lastTrip && start < lastTrip.arrivalTime) {
