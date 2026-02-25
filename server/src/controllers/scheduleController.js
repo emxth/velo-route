@@ -23,7 +23,7 @@ export class ScheduleController {
     async getAllSchedules(req, res) {
         try {
             const schedule = await this.scheduleService.getAllSchedule(req.query);
-            res.status(201).json({ message: "Schedules retrieved successfully", schedule });
+            res.status(200).json({ message: "Schedules retrieved successfully", schedule });
             logger.info("Retreiv all schedules");
         } catch (err) {
             res.status(500).json({ error: err.message });
@@ -46,7 +46,7 @@ export class ScheduleController {
     async updateSchedule(req, res) {
         try {
             const schedule = await this.scheduleService.updateSchedual(req.params.id, req.body);
-            res.status(200).json({ message: "Update Schedule Successfully", schedule });
+            res.status(201).json({ message: "Update Schedule Successfully", schedule });
             logger.info("Successfully Updated")
         } catch (err) {
             res.status(400).json({ message: "Update unsuccessfully...", error: err.message });
