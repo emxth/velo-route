@@ -20,7 +20,7 @@ export class RouteController {
     async getAll(req, res) {
         try {
             const routes = await service.getAllRoutes();
-            res.status(201).json(routes);
+            res.status(200).json(routes);
         } catch (err) {
             logger.error(err.message);
             res.status(500).json({ error: `Server Error ${err.message}` })
@@ -31,7 +31,7 @@ export class RouteController {
     async getById(req, res) {
         try {
             const route = await service.getRouteByID(req.params.id);
-            res.status(201).json(route);
+            res.status(200).json(route);
         } catch (err) {
             logger.error(err.message);
             res.status(404).json({ error: `Server Error ${err.message}` });
@@ -53,7 +53,7 @@ export class RouteController {
     async delete(req, res) {
         try {
             const result = await service.deleteRoute(req.params.id);
-            res.status(201).json(result);
+            res.status(200).json(result);
         } catch (err) {
             logger.error(err.message);
             res.status(404).json({ error: err.message });

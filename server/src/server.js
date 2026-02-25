@@ -12,6 +12,7 @@ import userRoutes from "./routes/users.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import complaintRoutes from "./routes/complaints.js";
 import { routeApi } from "./routes/routesRoute.js";
+import { ScheduleRoute } from "./routes/scheduleRoute.js";
 import vehicleRoutes from "./routes/vehicleRoutes.js";
 import departmentRoutes from "./routes/departmentRoutes.js";
 
@@ -57,6 +58,7 @@ app.use("/api/complaints", complaintRoutes);
 app.use("/api/bookings", bookingRoutes);
 // Vehicle route
 app.use("/api/vehicles", vehicleRoutes);
+app.use("/api/schedules", ScheduleRoute());
 // Department route
 app.use("/api/departments", departmentRoutes);
 
