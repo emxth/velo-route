@@ -1,19 +1,25 @@
-import express from "express";
+
 import dotenv from "dotenv";
+import express from "express";
 import morgan from "morgan";
 import cors from "cors";
+dotenv.config();
 import { connectDB } from "./config/db.js";
-import authRoutes from "./routes/auth.js";
-import userRoutes from "./routes/users.js";
-import vehicleRoutes from "./routes/vehicleRoutes.js";
-import departmentRoutes from "./routes/departmentRoutes.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
-dotenv.config({ path: "../.env" });
-connectDB();
+import authRoutes from "./routes/auth.js";
+import userRoutes from "./routes/users.js";
+import bookingRoutes from "./routes/bookingRoutes.js";
+import complaintRoutes from "./routes/complaints.js";
+import { routeApi } from "./routes/routesRoute.js";
+import vehicleRoutes from "./routes/vehicleRoutes.js";
+import departmentRoutes from "./routes/departmentRoutes.js";
 
+connectDB();
+ 
 const app = express();
+
 const rawOrigins = process.env.CORS_ORIGIN || "";
 const allowedOrigins = rawOrigins.split(",").map((s) => s.trim()).filter(Boolean);
 const corsOptions = {
@@ -29,14 +35,23 @@ app.use(express.json());
 if (process.env.NODE_ENV !== "production") app.use(morgan("dev"));
 app.use(requestLogger);
 
+// User routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+// Route routes
+app.use("/api/routes", routeApi);
+// Complaints route
+app.use("/api/complaints", complaintRoutes);
+// Booking route
+app.use("/api/bookings", bookingRoutes);
+// Vehicle route
 app.use("/api/vehicles", vehicleRoutes);
+// Department route
 app.use("/api/departments", departmentRoutes);
 
 app.get("/", (_req, res) => res.send("VeloRoute API running"));
 
-// centralized error handler
+//Centralized error handler
 app.use(errorHandler);
 
 const port = process.env.PORT;
