@@ -5,7 +5,6 @@ import morgan from "morgan";
 import cors from "cors";
 dotenv.config();
 import { connectDB } from "./config/db.js";
-import { errorHandler } from "./middleware/errorHandler.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
@@ -14,6 +13,8 @@ import userRoutes from "./routes/users.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import complaintRoutes from "./routes/complaints.js";
 import { routeApi } from "./routes/routesRoute.js";
+import vehicleRoutes from "./routes/vehicleRoutes.js";
+import departmentRoutes from "./routes/departmentRoutes.js";
 
 connectDB();
  
@@ -43,6 +44,10 @@ app.use("/api/routes", routeApi);
 app.use("/api/complaints", complaintRoutes);
 // Booking route
 app.use("/api/bookings", bookingRoutes);
+// Vehicle route
+app.use("/api/vehicles", vehicleRoutes);
+// Department route
+app.use("/api/departments", departmentRoutes);
 
 app.get("/", (_req, res) => res.send("VeloRoute API running"));
 
