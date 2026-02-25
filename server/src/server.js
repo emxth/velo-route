@@ -1,13 +1,12 @@
-
 import dotenv from "dotenv";
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
+import rateLimit from "express-rate-limit";
 dotenv.config();
 import { connectDB } from "./config/db.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 import { errorHandler } from "./middleware/errorHandler.js";
-
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
@@ -17,20 +16,32 @@ import vehicleRoutes from "./routes/vehicleRoutes.js";
 import departmentRoutes from "./routes/departmentRoutes.js";
 
 connectDB();
- 
+
 const app = express();
 
 const rawOrigins = process.env.CORS_ORIGIN || "";
-const allowedOrigins = rawOrigins.split(",").map((s) => s.trim()).filter(Boolean);
+const allowedOrigins = rawOrigins
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 const corsOptions = {
-    origin: (origin, callback) => {
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) return callback(null, true);
-        return callback(new Error("CORS policy: origin not allowed"));
-    },
-    credentials: true,
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.length === 0 || allowedOrigins.includes(origin))
+      return callback(null, true);
+    return callback(new Error("CORS policy: origin not allowed"));
+  },
+  credentials: true,
 };
 app.use(cors(corsOptions));
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests
+  message: "Too many requests from this IP",
+});
+app.use("/api", limiter);
+
 app.use(express.json());
 if (process.env.NODE_ENV !== "production") app.use(morgan("dev"));
 app.use(requestLogger);

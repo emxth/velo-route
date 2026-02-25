@@ -10,12 +10,6 @@ export const create = (data) => Department.create(data);
 export const findById = (id) =>
   Department.findById(id).populate("creator updater", "name email role");
 
-<<<<<<< Updated upstream
-export const findAll = (filter = {}) =>
-  Department.find(filter)
-    .sort({ createdAt: -1 })
-    .populate("creator updater", "name email role");
-=======
 export const findAll = (filter = {}, skip = 0, limit = 10) => {
   return Department.find(filter)
     .sort({ createdAt: -1 })
@@ -28,7 +22,6 @@ export const findAll = (filter = {}, skip = 0, limit = 10) => {
 export const countDocuments = (filter = {}) => {
   return Department.countDocuments(filter);
 };
->>>>>>> Stashed changes
 
 export const updateById = (id, data) =>
   Department.findByIdAndUpdate(

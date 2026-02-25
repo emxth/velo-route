@@ -36,10 +36,6 @@ export const validateDepartment = (req, res, next) => {
   }
 
   if (req.method === "PUT") {
-<<<<<<< Updated upstream
-    // PUT: Only update managerName, contactNumber, email, address
-=======
->>>>>>> Stashed changes
     if (managerName && managerName.trim().length < 2) {
       errors.push("Manager name must be at least 2 characters");
     }
@@ -61,10 +57,6 @@ export const validateDepartment = (req, res, next) => {
   }
 
   if (errors.length > 0) {
-<<<<<<< Updated upstream
-    // FIX: Pass a proper AppError object
-=======
->>>>>>> Stashed changes
     return next(new AppError("Validation failed", 400, { errors }));
   }
 
