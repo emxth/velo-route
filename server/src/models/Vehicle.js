@@ -155,7 +155,6 @@ const vehicleSchema = new mongoose.Schema(
 );
 
 //Indexes for better query performance
-vehicleSchema.index({ registrationNumber: 1 });
 vehicleSchema.index({ department: 1, status: 1 });
 vehicleSchema.index({ category: 1, type: 1 });
 vehicleSchema.index({ "insurance.expiryDate": 1 });

@@ -87,7 +87,6 @@ const DepartmentSchema = new mongoose.Schema(
 //Index for better query performance
 DepartmentSchema.index({ name: 1, region: 1 });
 DepartmentSchema.index({ status: 1, createdAt: -1 });
-DepartmentSchema.index({ createdBy: 1 });
 DepartmentSchema.index({ updatedBy: 1 });
 
 //Virtual to get creator details easily
