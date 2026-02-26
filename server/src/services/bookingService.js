@@ -12,7 +12,7 @@ import { ApiError } from "../utils/apiError.js";
 export const createBooking = async (userId, data) => {
   const { transportType, seatNumbers, coachNumber, phoneNumber, tripId } = data;
 
-  // ---------------- Validation ----------------
+  //Validations
   if (!phoneNumber) {
     throw new ApiError(400, "Phone number is required for booking");
   }
@@ -38,7 +38,7 @@ export const createBooking = async (userId, data) => {
     throw new ApiError(400, "Bus booking should not include coach number");
   }
 
-  // ---------------- Seat Conflict Check ----------------
+  //Seat Conflict Check
   const existingBookings = await bookingRepo.findConflictingSeats(
     tripId,
     seatNumbers
@@ -49,7 +49,7 @@ export const createBooking = async (userId, data) => {
   }
 
   const seatCount = seatNumbers.length;
-  const pricePerSeat = 500; // TODO: Replace with transport module API
+  const pricePerSeat = 500; //must Replace with transport module API
   const totalAmount = pricePerSeat * seatCount;
 
   // ---------------- Create Booking ----------------
