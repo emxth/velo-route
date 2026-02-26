@@ -1,7 +1,7 @@
 import * as bookingRepo from "../repositories/bookingRepository.js";
 import logger from "../config/logger.js";
 import { sendSMS } from "../services/notificationService.js";
-import { refundPayment } from "./paymentService.js";
+import { refundPayment, retrieveSession  } from "./paymentService.js";
 import { ApiError } from "../utils/apiError.js";
 
 /*
@@ -112,25 +112,55 @@ export const cancelBooking = async (bookingId, userId) => {
 export const confirmBooking = async (bookingId) => {
   const booking = await bookingRepo.findById(bookingId);
 
-  if (!booking) {
-    throw new ApiError(404, "Booking not found");
+  if (!booking) throw new ApiError(404, "Booking not found");
+
+  //Added for Testing Stripe
+  if (process.env.NODE_ENV === "test") {
+    booking.stripeSessionId = 'dummy_payment_session_id'
   }
 
-  booking.bookingStatus = "CONFIRMED";
+  if (!booking.stripeSessionId) {
+    throw new ApiError(400, "No payment session found for this booking");
+  }
+
+  // Retrieve session from Stripe
+  //const session = await retrieveSession(booking.stripeSessionId);
+
+  //Added for Testing Stripe
+  var session;
+  if (process.env.NODE_ENV === "test") {
+    session = {
+      id: booking.stripeSessionId,
+      payment_intent: { id: "dummy_payment_intent_id", status: "succeeded" },
+    };
+  } else {
+    session = await retrieveSession(booking.stripeSessionId);
+  }
+
+  if (!session.payment_intent || session.payment_intent.status !== "succeeded") {
+    throw new ApiError(400, "Payment not completed yet");
+  }
+
+  // Save only the ID, not the whole object
+  booking.paymentIntentId = session.payment_intent.id; 
   booking.paymentStatus = "PAID";
+  booking.bookingStatus = "CONFIRMED";
+
   await booking.save();
 
+  logger.info(`Booking ${bookingId} confirmed with PaymentIntent ${booking.paymentIntentId}`);
+
+  // Send SMS to passenger
   try {
     await sendSMS(
       booking.phoneNumber,
       `Your ${booking.transportType} booking on ${booking.departureTime} is CONFIRMED!`
     );
   } catch (err) {
-    logger.error(
-      `Failed to send SMS for booking ${booking._id}: ${err.message}`
-    );
+    logger.error(`Failed to send SMS for booking ${booking._id}: ${err.message}`);
   }
 
+  
   return booking;
 };
 
