@@ -16,7 +16,10 @@ import { ScheduleRoute } from "./routes/scheduleRoute.js";
 import vehicleRoutes from "./routes/vehicleRoutes.js";
 import departmentRoutes from "./routes/departmentRoutes.js";
 
-connectDB();
+// connectDB();
+if (process.env.NODE_ENV !== "test") {
+  connectDB();
+}
 
 const app = express();
 
@@ -67,5 +70,18 @@ app.get("/", (_req, res) => res.send("VeloRoute API running"));
 //Centralized error handler
 app.use(errorHandler);
 
-const port = process.env.PORT;
-app.listen(port, () => console.log(`Server running on port ${port}`));
+/* ===========================
+   START SERVER (Only if not test)
+=========================== */
+
+const port = process.env.PORT || 5000;
+
+if (process.env.NODE_ENV !== "test") {
+  app.listen(port, () => console.log(`Server running on port ${port}`));
+}
+
+/* ===========================
+   EXPORT APP FOR TESTING
+=========================== */
+
+export default app;
