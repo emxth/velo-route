@@ -5,8 +5,8 @@ import { refundPayment } from "./paymentService.js";
 import { ApiError } from "../utils/apiError.js";
 
 /*
- Service Layer = Business rules
- Handles validation, vehicle-specific rules, and interacts with repository
+  Service Layer = Business rules
+  Handles validation, transport rules, and repository interaction
 */
 
 export const createBooking = async (userId, data) => {
@@ -14,31 +14,28 @@ export const createBooking = async (userId, data) => {
 
   // ---------------- Validation ----------------
   if (!phoneNumber) {
-    throw new Error("Phone number is required for booking");
+    throw new ApiError(400, "Phone number is required for booking");
   }
 
   const phoneRegex = /^\+94\d{9}$/;
   if (!phoneRegex.test(phoneNumber)) {
-    throw new Error("Invalid phone number format. Use +94XXXXXXXXX");
+    throw new ApiError(400, "Invalid phone number format. Use +94XXXXXXXXX");
   }
 
   if (!seatNumbers || !Array.isArray(seatNumbers) || seatNumbers.length === 0) {
-    throw new Error("At least one seat must be selected");
+    throw new ApiError(400, "At least one seat must be selected");
   }
 
   if (!transportType || !tripId) {
-    throw new Error("Missing booking details");
+    throw new ApiError(400, "Missing booking details");
   }
 
-  const seatCount = seatNumbers.length;
-
-  // ---------------- Transport Rules ----------------
   if (transportType === "TRAIN" && !coachNumber) {
-    throw new Error("Train booking requires coach number");
+    throw new ApiError(400, "Train booking requires coach number");
   }
 
   if (transportType === "BUS" && coachNumber) {
-    throw new Error("Bus booking should not include coach number");
+    throw new ApiError(400, "Bus booking should not include coach number");
   }
 
   // ---------------- Seat Conflict Check ----------------
@@ -48,16 +45,11 @@ export const createBooking = async (userId, data) => {
   );
 
   if (existingBookings.length > 0) {
-    throw new Error("One or more selected seats already booked");
+    throw new ApiError(400, "One or more selected seats already booked");
   }
 
-  // ---------------- Price Calculation ----------------
-  /*
-    Price must NEVER come from frontend.
-    This should later call Routing/Schedule module.
-  */
-  const pricePerSeat = 500; // later Replace with transport module API
-
+  const seatCount = seatNumbers.length;
+  const pricePerSeat = 500; // TODO: Replace with transport module API
   const totalAmount = pricePerSeat * seatCount;
 
   // ---------------- Create Booking ----------------
@@ -66,13 +58,13 @@ export const createBooking = async (userId, data) => {
     transportType,
     tripId,
     seatNumbers,
-    seatCount,        
+    seatCount,
     coachNumber,
     phoneNumber,
     fromLocation: data.fromLocation,
     toLocation: data.toLocation,
     departureTime: data.departureTime,
-    amount: totalAmount, 
+    amount: totalAmount,
     bookingStatus: "PENDING",
     paymentStatus: "UNPAID",
   });
@@ -81,148 +73,158 @@ export const createBooking = async (userId, data) => {
   return booking;
 };
 
-export const getMyBookings = (userId) => bookingRepo.findByPassenger(userId);
+export const getMyBookings = (userId) =>
+  bookingRepo.findByPassenger(userId);
 
-export const getAllBookings = () => bookingRepo.findAll();
+export const getAllBookings = () =>
+  bookingRepo.findAll();
 
 /*
- Cancels a booking.
- If payment already completed → trigger refund automatically.
+  Cancel booking.
+  If payment already completed trigger refund.
 */
 export const cancelBooking = async (bookingId, userId) => {
   const booking = await bookingRepo.findById(bookingId);
 
-  if (!booking) throw new Error("Booking not found");
-
-  // Ensure only owner can cancel
-  if (booking.passenger.toString() !== userId.toString()) {
-    throw new Error("Unauthorized");
+  if (!booking) {
+    throw new ApiError(404, "Booking not found");
   }
 
-  /*
-   Refund only if payment already completed.
-  */
+  if (booking.passenger.toString() !== userId.toString()) {
+    throw new ApiError(403, "Unauthorized");
+  }
+
   if (booking.paymentStatus === "PAID") {
     await refundPayment(booking.paymentIntentId);
     booking.paymentStatus = "REFUNDED";
   }
 
   booking.bookingStatus = "CANCELLED";
-
-  // await bookingRepo.update(booking);
   await booking.save();
 
   logger.info(`Booking cancelled: ${booking._id} by user ${userId}`);
   return booking;
 };
 
-//Notification triggering after booking confirmation
+/*
+  Confirm booking and mark payment as completed
+*/
 export const confirmBooking = async (bookingId) => {
   const booking = await bookingRepo.findById(bookingId);
-  if (!booking) throw new Error("Booking not found");
 
-  // Update booking/payment status
+  if (!booking) {
+    throw new ApiError(404, "Booking not found");
+  }
+
   booking.bookingStatus = "CONFIRMED";
   booking.paymentStatus = "PAID";
   await booking.save();
 
-  // Send SMS to passenger
   try {
     await sendSMS(
       booking.phoneNumber,
       `Your ${booking.transportType} booking on ${booking.departureTime} is CONFIRMED!`
     );
   } catch (err) {
-    logger.error(`Failed to send SMS for booking ${booking._id}: ${err.message}`);
+    logger.error(
+      `Failed to send SMS for booking ${booking._id}: ${err.message}`
+    );
   }
 
   return booking;
 };
 
 /*
- Update booking fields: seatNumbers, phoneNumber, departureTime
- Only allowed if booking is still PENDING
- SeatCount and Amount are recalculated automatically
+  Update booking (only if PENDING)
 */
 export const updateBooking = async (bookingId, userId, data) => {
   const booking = await bookingRepo.findById(bookingId);
-  if (!booking) throw new Error("Booking not found");
 
-  // Only owner can update
-  if (booking.passenger.toString() !== userId.toString()) {
-    throw new Error("Unauthorized");
+  if (!booking) {
+    throw new ApiError(404, "Booking not found");
   }
 
-  // Only PENDING bookings can be updated
+  if (booking.passenger.toString() !== userId.toString()) {
+    throw new ApiError(403, "Unauthorized");
+  }
+
   if (booking.bookingStatus !== "PENDING") {
-    throw new Error("Only pending bookings can be updated");
+    throw new ApiError(400, "Only pending bookings can be updated");
   }
 
   const { seatNumbers, phoneNumber, departureTime } = data;
 
-  // ---------------- Phone validation ----------------
+  // ---------------- Phone Update ----------------
   if (phoneNumber) {
     const phoneRegex = /^\+94\d{9}$/;
     if (!phoneRegex.test(phoneNumber)) {
-      throw new Error("Invalid phone number format. Use +94XXXXXXXXX");
+      throw new ApiError(400, "Invalid phone number format. Use +94XXXXXXXXX");
     }
     booking.phoneNumber = phoneNumber;
   }
 
-  // ---------------- Seat update ----------------
+  // ---------------- Seat Update ----------------
   if (seatNumbers && Array.isArray(seatNumbers) && seatNumbers.length > 0) {
-    // Check for seat conflicts
     const existingBookings = await bookingRepo.findConflictingSeats(
       booking.tripId,
       seatNumbers
     );
 
-    // Ignore current booking seats in conflict check
     const conflictingSeats = existingBookings.filter(
       (b) => b._id.toString() !== bookingId
     );
 
     if (conflictingSeats.length > 0) {
-      throw new Error("One or more selected seats already booked");
+      throw new ApiError(400, "One or more selected seats already booked");
     }
 
     booking.seatNumbers = seatNumbers;
     booking.seatCount = seatNumbers.length;
 
-    // Recalculate amount (backend price per seat)
-    const pricePerSeat = 500; // TODO: fetch dynamically from transport module
+    const pricePerSeat = 500;
     booking.amount = pricePerSeat * booking.seatCount;
   }
 
-  // ---------------- Departure time ----------------
+  // ---------------- Departure Time ----------------
   if (departureTime) {
     booking.departureTime = new Date(departureTime);
   }
 
   await booking.save();
-  logger.info(`Booking updated: ${booking._id} by user ${userId}`);
 
+  logger.info(`Booking updated: ${booking._id} by user ${userId}`);
   return booking;
 };
 
-//delete cancelled booking of a user 
+/*
+  Delete booking (only if CANCELLED)
+*/
 export const deleteBooking = async (bookingId, userId) => {
   const booking = await bookingRepo.findById(bookingId);
-  if (!booking) throw new ApiError(404, "Booking not found");
+
+  if (!booking) {
+    throw new ApiError(404, "Booking not found");
+  }
 
   if (booking.passenger.toString() !== userId.toString()) {
     throw new ApiError(403, "Unauthorized");
   }
 
   if (booking.bookingStatus !== "CANCELLED") {
-    throw new ApiError(400, "Cannot delete a confirmed booking. Cancel it first.");
+    throw new ApiError(
+      400,
+      "Cannot delete a confirmed booking. Cancel it first."
+    );
   }
 
   await bookingRepo.deleteById(bookingId);
+
   return { message: "Booking deleted successfully" };
 };
 
-//delete all - clear booking history
+/*
+  Clear cancelled booking history
+*/
 export const clearBookingHistory = async (userId) => {
   await bookingRepo.deleteManyByPassenger(userId);
   return { message: "Cancelled booking history cleared" };
