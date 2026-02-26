@@ -46,6 +46,11 @@ const Login = () => {
               required
             />
           </div>
+          <div className="text-right">
+            <button type="button" className="text-sm underline text-primary-600" onClick={() => navigate("/forgot-password")}>
+              Forgot password?
+            </button>
+          </div>
           <button className="w-full btn-secondary" type="submit">
             Login
           </button>
