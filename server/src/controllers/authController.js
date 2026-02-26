@@ -1,6 +1,8 @@
 import logger from "../config/logger.js";
 import { registerUser, loginUser, resetPasswordWithOtp, requestPasswordReset } from "../services/authService.js";
 
+// Controller layer handles HTTP requests
+
 export const register = async (req, res, next) => {
   try {
     const data = await registerUser(req.body);
