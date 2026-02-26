@@ -1,0 +1,67 @@
+config:
+  target: "http://localhost:5000"
+  phases:
+    - duration: 5      # run for 60 seconds
+      arrivalRate: 1    # 3 virtual users per second
+
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "Full Booking Flow Test (Safe)"
+    flow:
+
+      # ------------------- LOGIN -------------------
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "john@example.com"
+            password: "Password123"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+
+      # ------------------- CREATE BOOKING -------------------
+      - post:
+          url: "/api/bookings/"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            transportType: "BUS"
+            tripId: "trip-{{ $randomInt(1,10) }}"  # keep it within existing trips
+            seatNumbers:
+              - "A{{ $randomInt(1,50) }}"         # seats A1-A50
+            phoneNumber: "+94712345678"
+            fromLocation: "Colombo"
+            toLocation: "Kandy"
+            departureTime: "2026-02-26T15:00:00Z"
+          capture:
+            - json: "$._id"
+              as: "bookingId"
+
+      # ------------------- GET BOOKING -------------------
+      - get:
+          url: "/api/bookings/{{ bookingId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+
+      # # ------------------- UPDATE BOOKING -------------------
+      # - patch:
+      #     url: "/api/bookings/{{ bookingId }}"
+      #     headers:
+      #       Authorization: "Bearer {{ authToken }}"
+      #     json:
+      #       phoneNumber: "+94719876543"
+
+      # # ------------------- CANCEL BOOKING -------------------
+      # - patch:
+      #     url: "/api/bookings/{{ bookingId }}/cancel"
+      #     headers:
+      #       Authorization: "Bearer {{ authToken }}"
+
+      # # ------------------- DELETE BOOKING -------------------
+      # - delete:
+      #     url: "/api/bookings/{{ bookingId }}"
+      #     headers:
+      #       Authorization: "Bearer {{ authToken }}"
