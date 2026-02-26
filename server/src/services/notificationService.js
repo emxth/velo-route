@@ -16,17 +16,3 @@ export const sendSMS = async (to, message) => {
   }
 };
 
-// Send Email
-// const transporter = nodemailer.createTransport({
-//   service: "gmail",
-//   auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-// });
-
-// export const sendEmail = async (to, subject, text) => {
-//   try {
-//     await transporter.sendMail({ from: process.env.EMAIL_USER, to, subject, text });
-//     logger.info(`Email sent to ${to}`);
-//   } catch (err) {
-//     logger.error(`Failed to send Email: ${err.message}`);
-//   }
-// };
