@@ -1,5 +1,5 @@
 import logger from "../config/logger.js";
-import { registerUser, loginUser } from "../services/authService.js";
+import { registerUser, loginUser, resetPasswordWithOtp, requestPasswordReset } from "../services/authService.js";
 
 export const register = async (req, res, next) => {
   try {
@@ -19,4 +19,18 @@ export const login = async (req, res, next) => {
   } catch (err) {
     return next(err);
   }
+};
+
+export const forgotPassword = async (req, res, next) => {
+  try {
+    await requestPasswordReset(req.body.email);
+    return res.json({ ok: true });
+  } catch (err) { return next(err); }
+};
+
+export const resetPassword = async (req, res, next) => {
+  try {
+    const data = await resetPasswordWithOtp(req.body);
+    return res.json(data);
+  } catch (err) { return next(err); }
 };

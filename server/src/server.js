@@ -1,9 +1,9 @@
 import dotenv from "dotenv";
+dotenv.config();
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
-dotenv.config();
 import { connectDB } from "./config/db.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 import { errorHandler } from "./middleware/errorHandler.js";
