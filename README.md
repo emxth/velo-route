@@ -3,6 +3,7 @@
 Full-stack MERN application (MongoDB, Express, React, Node.js) with authentication, role-based access, complaints/feedback (with geolocation), bookings, routes, vehicles, schedules, departments, and password reset via email OTP.
 
 ## Contents
+
 - [Project Structure](#project-structure)
 - [Prerequisites](#prerequisites)
 - [Setup](#setup)
@@ -15,6 +16,7 @@ Full-stack MERN application (MongoDB, Express, React, Node.js) with authenticati
 - [Troubleshooting](#troubleshooting)
 
 ## Project Structure
+
 ```
 docs/
   API_DOCUMENTATION.md
@@ -41,6 +43,7 @@ client/
 ```
 
 ## Prerequisites
+
 - Node.js 18+
 - MongoDB (local or Atlas)
 - Git
@@ -49,18 +52,21 @@ client/
 ## Setup
 
 ### 1) Clone
+
 ```bash
 git clone https://github.com/emxth/velo-route.git
 cd velo-route
 ```
 
 ### 2) Server
+
 ```bash
 cd server
 npm install
 ```
 
 Create `server/.env` (example):
+
 ```
 PORT=5000
 MONGO_URI=mongodb://localhost:27017/veloroute
@@ -73,20 +79,28 @@ MAIL_PORT=587
 MAIL_USER=your_email@gmail.com
 MAIL_PASS=your_gmail_app_password
 MAIL_FROM="VeloRoute Support" <your_email@gmail.com>
+
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 ```
 
 Run server:
+
 ```bash
 npm run dev   # or npm start
 ```
+
 Server base: `http://localhost:5000`
 
 ### 3) Client
+
 ```bash
 cd client
 npm install
 npm run dev
 ```
+
 Client base: `http://localhost:5173`
 
 ---
@@ -204,11 +218,14 @@ Key pages:
 
 ## Location Usability (Client)
 ## Environment Variables
+
 - Server expects the variables shown above (.env in `server/`).
 - For tests, set `NODE_ENV=test`; integration tests use in-memory Mongo and mock mailer.
 
 ## Scripts
+
 From `server/`:
+
 - `npm run dev` — start backend (dev)
 - `npm start` — start backend (prod)
 - `npm test` — unit tests
@@ -216,28 +233,35 @@ From `server/`:
 - `npm run test:performance` — performance (Artillery) if added to package.json
 
 From `client/`:
+
 - `npm run dev` — start frontend
 - `npm run build` — production build
 
 ## Testing
+
 - **Unit:** `npm test`
 - **Integration:** `npm run test:integration` (uses mongodb-memory-server, supertest; mailer mocked)
 - Test details: `docs/testing-report.md`
 
 ## Performance Tests
+
 Artillery example (complaints flow):
+
 ```bash
 cd server
 npx artillery run tests/performance/complaints.yml
 
 artillery run tests/performance-tests/booking-flow.yml
 ```
+
 Configure target/auth in the YAML before running.
 
 ## Documentation
+
 - API reference: `docs/API_DOCUMENTATION.md`
 
 ## Security Notes
+
 - JWT auth with role-based authorization
 - Password hashing via User model pre-save
 - Rate limiting on `/api` (100 req / 15 min)
@@ -245,6 +269,7 @@ Configure target/auth in the YAML before running.
 - Use a Gmail App Password (or Mailtrap) for MAIL_PASS; restart server after .env changes
 
 ## Troubleshooting
+
 - 401/403: Ensure `Authorization: Bearer <token>` is present; re-login if expired.
 - SMTP errors: Verify `MAIL_USER`/`MAIL_PASS` and restart server.
 - Mongoose `findOneAndUpdate` deprecation: use `{ returnDocument: "after" }` where applicable.
