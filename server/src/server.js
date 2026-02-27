@@ -18,31 +18,31 @@ import departmentRoutes from "./routes/departmentRoutes.js";
 
 // connectDB();
 if (process.env.NODE_ENV !== "test") {
-  connectDB();
+    connectDB();
 }
 
 const app = express();
 
 const rawOrigins = process.env.CORS_ORIGIN || "";
 const allowedOrigins = rawOrigins
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.length === 0 || allowedOrigins.includes(origin))
-      return callback(null, true);
-    return callback(new Error("CORS policy: origin not allowed"));
-  },
-  credentials: true,
+    origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.length === 0 || allowedOrigins.includes(origin))
+            return callback(null, true);
+        return callback(new Error("CORS policy: origin not allowed"));
+    },
+    credentials: true,
 };
 app.use(cors(corsOptions));
 
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests
-  message: "Too many requests from this IP",
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests
+    message: "Too many requests from this IP",
 });
 app.use("/api", limiter);
 
@@ -77,9 +77,9 @@ app.use(errorHandler);
 const port = process.env.PORT || 5000;
 
 if (process.env.NODE_ENV !== "test") {
-  app.listen(port, () =>
-    console.log(`Server running on port ${port}`)
-  );
+    app.listen(port, () =>
+        console.log(`Server running on port ${port}`)
+    );
 }
 
 /* ===========================
