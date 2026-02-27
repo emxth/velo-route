@@ -1,0 +1,95 @@
+config:
+  target: "http://localhost:5000"
+  phases:
+    - duration: 20
+      arrivalRate: 1
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "Uva Province Transport Department CRUD Flow"
+    flow:
+      # ---------------- LOGIN ----------------
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "john@example.com"
+            password: "admin@123"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+
+      - log: "Login successful"
+
+      # Wait 2 seconds
+      - think: 2
+
+      # CREATE UVA PROVINCE TRANSPORT DEPARTMENT
+      - post:
+          url: "/api/departments"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            name: "Uva Transport Dept {{ $randomString(8) }}"
+            description: "Manages transport operations in Uva Province"
+            managerName: "Bandara Uva Manager"
+            contactNumber: "0775551234"
+            email: "uvadept{{ $randomNumber(10000,99999) }}@test.com"
+            address: "123 Badulla Main Street, Uva Province"
+            region: "Uva"
+            status: "active"
+          capture:
+            - json: "$._id"
+              as: "deptId"
+
+      - log: "Uva Transport Department Created: id={{ deptId }}"
+
+      - think: 2
+
+      # GET ALL DEPARTMENTS
+      - get:
+          url: "/api/departments?page=1&limit=10"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+
+      - log: "Fetched all departments"
+
+      - think: 2
+
+      # GET UVA DEPARTMENT BY ID
+      - get:
+          url: "/api/departments/{{ deptId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+
+      - log: "Fetched Uva transport department by ID"
+
+      - think: 2
+
+      # UPDATE UVA DEPARTMENT
+      - put:
+          url: "/api/departments/{{ deptId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            name: "Updated Uva Transport Dept {{ $randomString(8) }}"
+            description: "Updated Uva provincial transport services"
+            managerName: "Kamal Perera"
+            contactNumber: "0775555678"
+            email: "uva-updated{{ $randomNumber(10000,99999) }}@test.com"
+            address: "456 Passara Road, Badulla"
+            region: "Uva"
+            status: "active"
+
+      - log: "Uva Transport Department Updated: id={{ deptId }}"
+
+      - think: 2
+
+      # DELETE UVA DEPARTMENT
+      - delete:
+          url: "/api/departments/{{ deptId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+
+      - log: "Uva Transport Department Deleted: id={{ deptId }}"
