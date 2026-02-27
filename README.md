@@ -1,14 +1,23 @@
 # VeloRoute — Smart Rural Transportation System
 
-Full-stack MERN application (MongoDB, Express, React, Node.js) with authentication, role-based access, complaints/feedback with location, bookings, routes, vehicles, schedules, departments, and password reset via email OTP.
+Full-stack MERN application (MongoDB, Express, React, Node.js) with authentication, role-based access, complaints/feedback (with geolocation), bookings, routes, vehicles, schedules, departments, and password reset via email OTP.
 
----
+## Contents
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Setup](#setup)
+- [Environment Variables](#environment-variables)
+- [Scripts](#scripts)
+- [Testing](#testing)
+- [Performance Tests](#performance-tests)
+- [Documentation](#documentation)
+- [Security Notes](#security-notes)
+- [Troubleshooting](#troubleshooting)
 
-## Repository Structure
-
+## Project Structure
 ```
 docs/
-  testing-report.md
+  API_DOCUMENTATION.md
 server/
   src/
     config/           # db, logger
@@ -17,11 +26,12 @@ server/
     models/           # User, Complaint, etc.
     repositories/     # data access layer
     routes/           # auth, users, complaints, bookings, routes, vehicles, schedules, departments
-    services/         # business logic (authService, complaintService, etc.)
+    services/         # business logic
     utils/            # mailer, token, AppError
   tests/
     unit/
     integration/
+    performance/
 client/
   src/
     pages/            # Login, Register, Complaints, ComplaintDetail, etc.
@@ -30,16 +40,11 @@ client/
     context/          # AuthContext
 ```
 
----
-
 ## Prerequisites
-
 - Node.js 18+
 - MongoDB (local or Atlas)
 - Git
-- Postman for API testing
-
----
+- Postman or curl for API checks
 
 ## Setup
 
@@ -74,7 +79,7 @@ Run server:
 ```bash
 npm run dev   # or npm start
 ```
-Server: `http://localhost:5000`
+Server base: `http://localhost:5000`
 
 ### 3) Client
 ```bash
@@ -82,206 +87,48 @@ cd client
 npm install
 npm run dev
 ```
-Client: `http://localhost:5173`
+Client base: `http://localhost:5173`
 
----
+## Environment Variables
+- Server expects the variables shown above (.env in `server/`).
+- For tests, set `NODE_ENV=test`; integration tests use in-memory Mongo and mock mailer.
 
-## API Base URL
-```
-http://localhost:5000/api
-```
+## Scripts
+From `server/`:
+- `npm run dev` — start backend (dev)
+- `npm start` — start backend (prod)
+- `npm test` — unit tests
+- `npm run test:integration` — integration tests
+- `npm run test:performance` — performance (Artillery) if added to package.json
 
-All protected endpoints require:
-```
-Authorization: Bearer <JWT_TOKEN>
-```
-
----
-
-## Authentication APIs
-
-### Register
-```
-POST /auth/register
-```
-```json
-{ "name": "Alice Admin", "email": "admin@test.com", "password": "secret123", "role": "admin" }
-```
-
-### Login
-```
-POST /auth/login
-```
-```json
-{ "email": "admin@test.com", "password": "secret123" }
-```
-Response includes `token` and `user`.
-
-### Forgot Password (OTP email)
-```
-POST /auth/forgot
-```
-```json
-{ "email": "admin@test.com" }
-```
-
-### Reset Password with OTP
-```
-POST /auth/reset
-```
-```json
-{ "email": "admin@test.com", "otp": "123456", "newPassword": "newSecret123" }
-```
-
-### Current User
-```
-GET /auth/me   (Bearer token)
-GET /auth/admin/ping   (Bearer admin)
-```
-
----
-
-## User Management APIs (Bearer required)
-
-- `GET /users` (admin)
-- `GET /users/me`
-- `PUT /users/me` — update current user
-- `DELETE /users/me`
-- `GET /users/me/permissions`
-- `GET /users/:id/permissions` (admin)
-- `PUT /users/:id/permissions` (admin) — change role
-- `GET /users/:id` (admin)
-
-Sample update:
-```
-PUT /users/me
-Authorization: Bearer <token>
-Content-Type: application/json
-{ "name": "Duleesha Sewmini" }
-```
-
----
-
-## Complaint & Feedback APIs (Bearer required)
-
-### Create Complaint
-```
-POST /complaints
-```
-```json
-{
-  "category": "road",
-  "subject": "Pothole on main street",
-  "message": "Large pothole causing delays.",
-  "location": { "lat": 7.8731, "lng": 80.7718, "label": "Near bridge" }
-}
-```
-
-### Create Feedback
-```
-POST /complaints/feedback
-```
-```json
-{
-  "category": "transport",
-  "subject": "Thanks for the new route",
-  "message": "Service is smoother now."
-}
-```
-
-### List Complaints
-```
-GET /complaints
-```
-- Admin: all
-- User: own
-
-### Get Complaint by ID
-```
-GET /complaints/:id
-```
-
-### Update Status (admin)
-```
-PUT /complaints/:id/status
-{ "status": "resolved" }
-```
-
-### Add Admin Response (admin)
-```
-PUT /complaints/:id/response
-{ "text": "We dispatched a crew to fix this." }
-```
-
-### Delete Complaint (admin)
-```
-DELETE /complaints/:id
-```
-
----
-
-## Bookings / Routes / Vehicles / Schedules / Departments
-
-Modules are mounted under:
-- `/bookings`
-- `/routes`
-- `/vehicles`
-- `/schedules`
-- `/departments`
-
-(Protected by JWT; some may require admin depending on route-level guards.)
-
----
-
-## Testing with Token (Postman)
-
-1) Login to get token:
-```
-POST http://localhost:5000/api/auth/login
-{ "email": "admin@test.com", "password": "secret123" }
-```
-
-2) Use token in subsequent requests:
-Header: `Authorization: Bearer <token>`
-
----
+From `client/`:
+- `npm run dev` — start frontend
+- `npm run build` — production build
 
 ## Testing
+- **Unit:** `npm test`
+- **Integration:** `npm run test:integration` (uses mongodb-memory-server, supertest; mailer mocked)
+- Test details: `docs/testing-report.md`
 
-### Unit Tests (server)
+## Performance Tests
+Artillery example (complaints flow):
 ```bash
 cd server
-npm test
+npx artillery run tests/performance/complaints.yml
 ```
-Covers services (auth, complaints, users), middleware (auth/authorize), etc.
+Configure target/auth in the YAML before running.
 
-### Integration Tests (server)
-```bash
-cd server
-npm run test:integration
-```
-Uses supertest + mongodb-memory-server for auth, users, complaints, bookings.
+## Documentation
+- API reference: `docs/API_DOCUMENTATION.md`
 
-### Testing Environment
-- Set `NODE_ENV=test`
-- In-memory MongoDB (no external DB)
-- Mailer is mocked in tests to avoid SMTP calls
-
----
-
-## Security Practices
-
-- JWT authentication
-- Role-based authorization
-- Password hashing (bcrypt via User model pre-save)
-- Rate limiting on `/api`
+## Security Notes
+- JWT auth with role-based authorization
+- Password hashing via User model pre-save
+- Rate limiting on `/api` (100 req / 15 min)
 - CORS restricted to configured origins
-- Input validation in services and middleware
+- Use a Gmail App Password (or Mailtrap) for MAIL_PASS; restart server after .env changes
 
----
-
-## Common Issues
-
-- 401/403: Missing or invalid Bearer token; re-login and retry.
-- SMTP errors: ensure `MAIL_USER`/`MAIL_PASS` are set (Gmail app password), restart server after updating `.env`.
-- Mongoose deprecation warnings: ensure `returnDocument: "after"` in findByIdAndUpdate calls where needed.
+## Troubleshooting
+- 401/403: Ensure `Authorization: Bearer <token>` is present; re-login if expired.
+- SMTP errors: Verify `MAIL_USER`/`MAIL_PASS` and restart server.
+- Mongoose `findOneAndUpdate` deprecation: use `{ returnDocument: "after" }` where applicable.
