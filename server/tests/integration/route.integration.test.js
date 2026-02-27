@@ -7,8 +7,7 @@ import RouteT from "../../src/models/RouteT";
 
 
 let mongoServer;
-let routeId;
-let vehicleId;
+
 
 //test datase setup
 beforeAll(async () => {
