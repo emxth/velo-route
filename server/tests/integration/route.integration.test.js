@@ -4,9 +4,12 @@ import { MongoMemoryServer } from "mongodb-memory-server";
 import app from "../../src/server";
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "@jest/globals";
 import RouteT from "../../src/models/RouteT";
-
+import jwt from 'jsonwebtoken';
+import { User } from "../../src/models/User";
 
 let mongoServer;
+let token;
+let userId;
 
 
 //test datase setup
@@ -14,6 +17,24 @@ beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
     const uri = mongoServer.getUri();
     await mongoose.connect(uri);
+
+
+    //create test admin
+    const admin = await User.create({
+        name: "Test Admin",
+        email: "test@admin.com",
+        password: "admin123",
+        role: "admin"
+    });
+
+    userId = admin._id;
+
+    //generate JWT to match auth middleware
+    token = jwt.sign(
+        { userId: userId.toString(), role: "admin" },
+        process.env.JWT_SECRET || "testsecret",
+        { expiresIn: "1h" }
+    );
 });
 
 afterAll(async () => {
@@ -31,6 +52,7 @@ describe("Route Management Integration", () => {
     test("should create route successfully", async () => {
         const res = await request(app)
             .post("/api/routes/addRoute")
+            .set("Authorization", `Bearer ${token}`)
             .send({
                 name: "Ragama to Kadawatha",
                 routeNumber: "A5",
@@ -80,6 +102,7 @@ describe("Route Management Integration", () => {
     test("Should reject invalid stops", async () => {
         const res = await request(app)
             .post("/api/routes/addRoute")
+            .set("Authorization", `Bearer ${token}`)
             .send({
                 name: "Ragama to Kadawatha",
                 routeNumber: "A5",
