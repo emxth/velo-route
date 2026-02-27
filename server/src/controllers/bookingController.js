@@ -1,5 +1,5 @@
 import * as bookingService from "../services/bookingService.js";
-import { createCheckoutSession } from "../services/paymentService.js";
+import { createCheckoutSession, retrieveSession } from "../services/paymentService.js";
 import logger from "../config/logger.js";
 
 /*
@@ -51,17 +51,49 @@ export const cancelBooking = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+// Start Payment
 export const payBooking = async (req, res, next) => {
   try {
     const session = await createCheckoutSession(req.params.id);
-    res.json({ checkoutUrl: session.url });
-  } catch (err) { next(err); }
+
+    res.json({
+      checkoutUrl: session.url,
+      sessionId: session.id
+    });
+
+  } catch (err) {
+    next(err);
+  }
 };
 
+// Confirm Payment (NEW CORRECT VERSION)
 export const confirmBooking = async (req, res, next) => {
   try {
-    const booking = await bookingService.confirmBooking(req.params.id);
+    const { sessionId } = req.body;
+
+    if (!sessionId) {
+      return res.status(400).json({
+        message: "Session ID is required"
+      });
+    }
+
+    // Retrieve session from Stripe
+    const session = await retrieveSession(sessionId);
+
+    if (!session.payment_intent) {
+      return res.status(400).json({
+        message: "Payment not completed yet"
+      });
+    }
+
+    // Delegate update to booking service
+    const booking = await bookingService.confirmBooking(
+      req.params.id,
+      session.payment_intent
+    );
+
     res.json(booking);
+
   } catch (err) {
     logger.error(`Booking confirmation failed: ${err.message}`);
     next(err);

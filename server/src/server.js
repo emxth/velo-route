@@ -1,9 +1,9 @@
 import dotenv from "dotenv";
+dotenv.config();
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
-dotenv.config();
 import { connectDB } from "./config/db.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 import { errorHandler } from "./middleware/errorHandler.js";
@@ -77,7 +77,9 @@ app.use(errorHandler);
 const port = process.env.PORT || 5000;
 
 if (process.env.NODE_ENV !== "test") {
-  app.listen(port, () => console.log(`Server running on port ${port}`));
+  app.listen(port, () =>
+    console.log(`Server running on port ${port}`)
+  );
 }
 
 /* ===========================
