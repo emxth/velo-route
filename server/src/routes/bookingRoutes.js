@@ -17,8 +17,6 @@ router.get("/", protect, authorize("admin"), bookingController.getAllBookings);
 router.patch("/:id", protect, authorize("user"), bookingController.updateBookingController);
 
 // Cancel booking
-// router.put("/:id/cancel", protect, bookingController.cancelBooking);
-// router.delete("/:id/cancel", protect, cancelBooking);   
 router.patch("/:id/cancel", protect, bookingController.cancelBooking);
 
 // Start payment
