@@ -4,7 +4,7 @@ const vehicleSchema = new mongoose.Schema(
   {
     vehiclePhoto: {
       type: String,
-      required: [true, "Vehicle photo is required"],
+      required: false,
     },
 
     cloudinaryId: {

@@ -1,0 +1,127 @@
+config:
+  target: "http://localhost:5000"
+  phases:
+    - duration: 20
+      arrivalRate: 1
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "CTB Bus Passenger Vehicle CRUD Flow"
+    flow:
+      # ---------------- LOGIN ----------------
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "john@example.com"
+            password: "admin@123"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+
+      - log: "Login successful"
+
+      - think: 2
+
+      # CREATE CTB DEPARTMENT
+      - post:
+          url: "/api/departments"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            name: "CTB Transport Dept {{ $randomString(8) }}"
+            description: "Ceylon Transport Board bus operations"
+            managerName: "Sirisena CTB Manager"
+            contactNumber: "0777771234"
+            email: "ctbdept{{ $randomNumber(10000,99999) }}@test.com"
+            address: "789 CTB Central Bus Stand, Colombo"
+            region: "Western"
+            status: "active"
+          capture:
+            - json: "$._id"
+              as: "deptId"
+
+      - log: "CTB Department Created: id={{ deptId }}"
+
+      - think: 2
+
+      # CREATE CTB BUS
+      - post:
+          url: "/api/vehicles"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            registrationNumber: "CTB-{{ $randomNumber(10000,99999) }}"
+            category: "Bus"
+            type: "Passenger"
+            brand: "Ashok Leyland"
+            model: "Viking"
+            yearOfManufacture: 2021
+            seatCapacity: 55
+            department: "{{ deptId }}"
+            insurance:
+              provider: "Sri Lanka Insurance"
+              policyNumber: "INS-CTB-{{ $randomNumber(10000,99999) }}"
+              type: "Comprehensive"
+              startDate: "2026-01-01T00:00:00.000Z"
+              expiryDate: "2027-01-01T00:00:00.000Z"
+            fitness:
+              certificateNumber: "FIT-CTB-{{ $randomNumber(10000,99999) }}"
+              issueDate: "2026-01-01T00:00:00.000Z"
+              expiryDate: "2027-01-01T00:00:00.000Z"
+            status: "AVAILABLE"
+          capture:
+            - json: "$._id"
+              as: "vehicleId"
+
+      - log: "CTB Bus Created: id={{ vehicleId }}"
+
+      - think: 2
+
+      # GET ALL VEHICLES
+      - get:
+          url: "/api/vehicles?page=1&limit=10"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+
+      - log: "Fetched all vehicles"
+
+      - think: 2
+
+      # GET VEHICLE BY ID
+      - get:
+          url: "/api/vehicles/{{ vehicleId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+
+      - log: "Fetched CTB bus by ID"
+
+      - think: 2
+
+      # UPDATE VEHICLE
+      - put:
+          url: "/api/vehicles/{{ vehicleId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            status: "UNDER MAINTENANCE"
+            lastMaintenance:
+              date: "2026-02-15T00:00:00.000Z"
+              maintenanceType: "Engine Overhaul"
+              odometer: 45000
+            nextMaintenanceDue:
+              date: "2026-05-15T00:00:00.000Z"
+              odometer: 50000
+
+      - log: "CTB Bus Updated: id={{ vehicleId }}"
+
+      - think: 2
+
+      # DELETE VEHICLE
+      - delete:
+          url: "/api/vehicles/{{ vehicleId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+
+      - log: "CTB Bus Deleted: id={{ vehicleId }}"
