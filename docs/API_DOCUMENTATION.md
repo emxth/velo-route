@@ -169,30 +169,31 @@ Header (when required): `Authorization: Bearer <token>` and `Content-Type: appli
 
 - **DELETE** `/complaints/:id`
 - **Auth**: Bearer (admin)
----------------------------------------------------------------------------------------------
+
+---
 
 ## Booking & Payment Module API Documentation
 
-**AUTHENTICATION**
-==================================================
+# **AUTHENTICATION**
 
 - Authentication Type:
-    - Bearer JSON Web Token (JWT)
+  - Bearer JSON Web Token (JWT)
 
 Required Header for Protected Endpoints:
+
 - Authorization: Bearer <your_jwt_token>
 - Content-Type: application/json
 
 Roles Used:
-- user  → Manage own bookings
+
+- user → Manage own bookings
 - admin → View all bookings
 
 ==================================================
 **BOOKING MODULE**
 ==================================================
 
-**1. Create Booking**
---------------------------------------------------
+## **1. Create Booking**
 
 Endpoint:
 POST `/bookings`
@@ -201,6 +202,7 @@ Access:
 User only (role: user)
 
 Request Body:
+
 ```json
 {
   "transportType": "BUS",
@@ -214,37 +216,38 @@ Request Body:
 ```
 
 If transportType = TRAIN, include:
+
 ```json
 {
   "coachNumber": "C1"
 }
 ```
+
 Success Response (201):
+
 ```json
 {
-    "passenger": "699fec7118ab45ce1698e416",
-    "phoneNumber": "+94771234567",
-    "transportType": "BUS",
-    "tripId": "BUS101",
-    "seatNumbers": [
-        "A1",
-        "A2"
-    ],
-    "seatCount": 2,
-    "fromLocation": "Nuwara Eliya",
-    "toLocation": "Kandy",
-    "departureTime": "2026-03-01T08:00:00.000Z",
-    "amount": 1000,
-    "bookingStatus": "PENDING",
-    "paymentStatus": "UNPAID",
-    "_id": "69a16b2c1fad9f8c8dbc136a",
-    "createdAt": "2026-02-27T10:00:12.915Z",
-    "updatedAt": "2026-02-27T10:00:12.915Z",
-    "__v": 0
+  "passenger": "699fec7118ab45ce1698e416",
+  "phoneNumber": "+94771234567",
+  "transportType": "BUS",
+  "tripId": "BUS101",
+  "seatNumbers": ["A1", "A2"],
+  "seatCount": 2,
+  "fromLocation": "Nuwara Eliya",
+  "toLocation": "Kandy",
+  "departureTime": "2026-03-01T08:00:00.000Z",
+  "amount": 1000,
+  "bookingStatus": "PENDING",
+  "paymentStatus": "UNPAID",
+  "_id": "69a16b2c1fad9f8c8dbc136a",
+  "createdAt": "2026-02-27T10:00:12.915Z",
+  "updatedAt": "2026-02-27T10:00:12.915Z",
+  "__v": 0
 }
-
 ```
+
 Business Rules:
+
 - Phone number must match format +94XXXXXXXXX
 - At least one seat must be selected
 - Seats cannot already be booked for the same trip
@@ -257,9 +260,9 @@ Error Codes:
 403 → Forbidden (role restriction)
 500 → Internal server error
 
---------------------------------------------------
-**2. Get My Bookings**
---------------------------------------------------
+---
+
+## **2. Get My Bookings**
 
 Endpoint:
 GET `/bookings/me`
@@ -268,6 +271,7 @@ Access:
 Authenticated user
 
 Success Response (200):
+
 ```json
 [
   {
@@ -284,13 +288,12 @@ Error Codes:
 401 → Unauthorized
 500 → Internal server error
 
+---
 
---------------------------------------------------
-**3. Get All Bookings**
---------------------------------------------------
+## **3. Get All Bookings**
 
 Endpoint:
-GET ``/bookings``
+GET `/bookings`
 
 Access:
 Admin only (role: admin)
@@ -303,18 +306,18 @@ Error Codes:
 403 → Forbidden (non-admin access)
 500 → Internal server error
 
+---
 
---------------------------------------------------
-**4. Update Booking**
---------------------------------------------------
+## **4. Update Booking**
 
 Endpoint:
-PATCH  `/bookings/:id`
+PATCH `/bookings/:id`
 
 Access:
 Owner only
 
 Request Body (optional fields):
+
 ```json
 {
   "seatNumbers": ["A3", "A4"],
@@ -322,7 +325,9 @@ Request Body (optional fields):
   "departureTime": "2026-03-02T09:00:00Z"
 }
 ```
+
 Rules:
+
 - Only PENDING bookings can be updated
 - Seat conflicts are validated again
 - Amount recalculates automatically
@@ -334,10 +339,9 @@ Error Codes:
 404 → Booking not found
 500 → Internal server error
 
+---
 
---------------------------------------------------
-**5. Cancel Booking**
---------------------------------------------------
+## **5. Cancel Booking**
 
 Endpoint:
 PATCH `/bookings/:id/cancel`
@@ -346,27 +350,29 @@ Access:
 Owner only
 
 Behavior:
+
 - If paymentStatus = PAID → automatic refund triggered
 - bookingStatus → CANCELLED
 - paymentStatus → REFUNDED
 
 Success Response (200):
+
 ```json
 {
   "bookingStatus": "CANCELLED",
   "paymentStatus": "REFUNDED"
 }
 ```
+
 Error Codes:
 401 → Unauthorized
 403 → Forbidden
 404 → Booking not found
 500 → Internal server error
 
+---
 
---------------------------------------------------
-**6. Delete Booking**
---------------------------------------------------
+## **6. Delete Booking**
 
 Endpoint:
 DELETE `/bookings/:id`
@@ -378,11 +384,13 @@ Rule:
 Only CANCELLED bookings can be deleted.
 
 Success Response:
+
 ```json
 {
   "message": "Booking deleted successfully"
 }
 ```
+
 Error Codes:
 400 → Cannot delete non-cancelled booking
 401 → Unauthorized
@@ -390,9 +398,9 @@ Error Codes:
 404 → Booking not found
 500 → Internal server error
 
---------------------------------------------------
-**7. Clear Cancelled Booking History**
---------------------------------------------------
+---
+
+## **7. Clear Cancelled Booking History**
 
 Endpoint:
 DELETE `/bookings`
@@ -402,12 +410,14 @@ Authenticated user
 
 Description:
 Deletes all cancelled bookings belonging to the logged-in user.
+
 ```json
 Success Response:
 {
   "message": "Cancelled booking history cleared"
 }
 ```
+
 Error Codes:
 401 → Unauthorized
 500 → Internal server error
@@ -416,9 +426,9 @@ Error Codes:
 **PAYMENT MODULE (STRIPE INTEGRATION)**
 ==================================================
 
---------------------------------------------------
-**8. Start Payment**
---------------------------------------------------
+---
+
+## **8. Start Payment**
 
 Endpoint:
 POST `/bookings/:id/pay`
@@ -430,12 +440,14 @@ Rule:
 Only PENDING bookings can be paid.
 
 Success Response:
+
 ```json
 {
   "checkoutUrl": "https://checkout.stripe.com/...",
   "sessionId": "cs_test_xxxxx"
 }
 ```
+
 Client Action:
 Redirect user to checkoutUrl to complete payment.
 
@@ -445,10 +457,9 @@ Error Codes:
 404 → Booking not found
 500 → Stripe or server error
 
+---
 
---------------------------------------------------
-**9. Confirm Payment**
---------------------------------------------------
+## **9. Confirm Payment**
 
 Endpoint:
 PUT `/bookings/:id/confirm`
@@ -457,12 +468,15 @@ Access:
 Owner only
 
 Request Body:
+
 ```json
 {
   "sessionId": "cs_test_xxxxx"
 }
 ```
+
 Process:
+
 1. Retrieve Stripe session
 2. Verify payment status = succeeded
 3. Save paymentIntentId
@@ -471,6 +485,7 @@ Process:
 6. Send SMS confirmation
 
 Success Response:
+
 ```json
 {
   "_id": "bookingId",
@@ -479,6 +494,7 @@ Success Response:
   "paymentIntentId": "pi_xxxxx"
 }
 ```
+
 Error Codes:
 400 → Session ID required / Payment not completed
 401 → Unauthorized
@@ -486,15 +502,13 @@ Error Codes:
 404 → Booking not found
 500 → Stripe or server error
 
-
 ==================================================
 **BOOKING STATUS LIFECYCLE**
 ==================================================
 
-PENDING  → CONFIRMED
-PENDING  → CANCELLED
+PENDING → CONFIRMED
+PENDING → CANCELLED
 CONFIRMED → CANCELLED (with refund)
-
 
 ==================================================
 **STANDARD HTTP ERROR CODES USED**
@@ -508,15 +522,13 @@ CONFIRMED → CANCELLED (with refund)
 404 → Not found
 500 → Internal server error
 
-
-
-
 ### Routes Management
 
 ## Create New Transport Route
-- **POST** `/api/routes/addRoute`
--**Body**
-```json 
+
+- **POST** `/api/routes/addRoute` -**Body**
+
+```json
 {
   "name": "Colombo - Kandy Main Road",
   "routeNumber": "A2",
@@ -555,63 +567,71 @@ CONFIRMED → CANCELLED (with refund)
     }
   ]}
 ```
+
 - **Auth**: Bearer (admin)
 
 ## Get all transport routes
+
 - **GET** `/api/routes/`
 - **Auth**: Bearer (admin)
 
 ## Get specific Route
+
 - **GET** `/api/routes/route/:id`
 - **Auth**: Bearer (admin)
 
 ## Update Existing Route
+
 - **PUT** `/api/routes/updateRoute/:id`
 - **Auth**: Bearer (admin)
 
 ## Delete Route
+
 - **DELETE** `/api/routes/clearRoute/:id`
 - **Auth**: Bearer (admin)
 
-## Third Party API 
+## Third Party API
 
 - `http://router.project-osrm.org/route/v1/driving/{lng1},{lat1};{lng2},{lat2}`
-
-
 
 ### Schedule Management
 
 ## Create New Transport Schedule
-- **POST** `/api/schedules/addSchedule`
--**Body**
-```json 
-  {
-    "routeId": "6996b2833151811d941307c5",
-    "vehicleID": "699d748f93bff79aa081c346",
-    "depatureTime": "2026-03-01T08:10:00Z",
-    "frequency": "DAILY",
-    "status": "SCHEDULED",
-    "active": true
+
+- **POST** `/api/schedules/addSchedule` -**Body**
+
+```json
+{
+  "routeId": "6996b2833151811d941307c5",
+  "vehicleID": "699d748f93bff79aa081c346",
+  "depatureTime": "2026-03-01T08:10:00Z",
+  "frequency": "DAILY",
+  "status": "SCHEDULED",
+  "active": true
 }
 ```
+
 - **Auth**: Bearer (admin)
 
 ## Get all Schedules
+
 - **GET** `/api/schedules/`
 - **Auth**: Bearer (admin)
 
 ## Get specific Schedule
+
 - **GET** `/api/schedules/:id`
 - **Auth**: Bearer (admin)
 
 ## Update Existing Route
+
 - **PUT** `/api/schedules/updateSchedule/:id`
 - **Auth**: Bearer (admin)
 
 ## Delete Route
+
 - **DELETE** `/api/schedules/:id`
 - **Auth**: Bearer (admin)
-
 
 ---
 
@@ -1457,41 +1477,44 @@ Admin only (role: admin)
 Content-Type:
 multipart/form-data
 
-Request Body (form-data, all fields optional):
+Description:
+
+- Updates an existing vehicle's information.
+- All fields are optional - only provided fields will be updated.
+- The request should be sent as multipart/form-data to support file uploads.
+
+Request Fields:
+
 **Vehicle Information**
-| Field | Type | Description |
-|-------|------|----------|-------------|
-| vehiclePhoto | File | Image file (JPG, PNG, max 2MB) |
-| registrationNumber | String | Format: ABC-1234 (uppercase, alphanumeric, hyphens) |
-| category | String | "Bus" or "Train" |
-| type | String | "Passenger" or "Cargo" |
-| brand | String | Vehicle brand name |
-| model | String | Vehicle model |
-| yearOfManufacture | Number | Between 2000 and current year |
-| seatCapacity | Number | Required if type = "Passenger", min 1 |
-| cargoCapacityKg | Number | Required if type = "Cargo", min 500 |
-| department | String | Valid department ObjectId |
+
+- `vehiclePhoto` - Image file (JPG, PNG, max 2MB)
+- `registrationNumber` - Format: ABC-1234 (uppercase, alphanumeric, hyphens)
+- `category` - "Bus" or "Train"
+- `type` - "Passenger" or "Cargo"
+- `brand` - Vehicle brand name
+- `model` - Vehicle model
+- `yearOfManufacture` - Between 2000 and current year
+- `seatCapacity` - Required if type = "Passenger", min 1
+- `cargoCapacityKg` - Required if type = "Cargo", min 500
+- `department` - Valid department ObjectId
 
 **Insurance Details**
-| Field | Type | Description |
-|-------|------|----------|-------------|
-| insurance[provider] | String | Insurance provider name |
-| insurance[policyNumber] | String | Policy number |
-| insurance[type] | String | "Comprehensive", "Third Party", or "Liability" (default: "Comprehensive") |
-| insurance[startDate] | Date | Start date (ISO format) |
-| insurance[expiryDate] | Date | Expiry date (ISO format) |
+
+- `insurance[provider]` - Insurance provider name
+- `insurance[policyNumber]` - Policy number
+- `insurance[type]` - "Comprehensive", "Third Party", or "Liability" (default: "Comprehensive")
+- `insurance[startDate]` - Start date (ISO format)
+- `insurance[expiryDate]` - Expiry date (ISO format)
 
 **Fitness Details**
-| Field | Type | Description |
-|-------|------|----------|-------------|
-| fitness[certificateNumber] | String | Fitness certificate number |
-| fitness[issueDate] | Date | Issue date (ISO format) |
-| fitness[expiryDate] | Date | Expiry date (ISO format) |
+
+- `fitness[certificateNumber]` - Fitness certificate number
+- `fitness[issueDate]` - Issue date (ISO format)
+- `fitness[expiryDate]` - Expiry date (ISO format)
 
 **Status**
-| Field | Type | Description |
-|-------|------|----------|-------------|
-| status | String | "AVAILABLE", "UNDER MAINTENANCE", "UNAVAILABLE" (default: "AVAILABLE") |
+
+- `status` - "AVAILABLE", "UNDER MAINTENANCE", "UNAVAILABLE" (default: "AVAILABLE")
 
 Success Response(200):
 
