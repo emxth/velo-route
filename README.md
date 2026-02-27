@@ -1,16 +1,18 @@
-# VeloRoute — Server + Client
+# VeloRoute — Smart Rural Transportation System
 
-End-to-end app with authentication, role-based access, complaints/feedback with location, booking/routes/vehicles/departments, and password reset via email OTP.
+Full-stack MERN application (MongoDB, Express, React, Node.js) with authentication, role-based access, complaints/feedback with location, bookings, routes, vehicles, schedules, departments, and password reset via email OTP.
 
 ---
 
-## Project Structure
+## Repository Structure
 
 ```
+docs/
+  testing-report.md
 server/
   src/
     config/           # db, logger
-    controllers/      # auth
+    controllers/      # auth, complaints, etc.
     middleware/       # auth, roles, requestLogger, errorHandler
     models/           # User, Complaint, etc.
     repositories/     # data access layer
@@ -18,10 +20,11 @@ server/
     services/         # business logic (authService, complaintService, etc.)
     utils/            # mailer, token, AppError
   tests/
-    unit/             # Jest unit tests
+    unit/
+    integration/
 client/
   src/
-    pages/            # Login, Register, ForgotPassword, ResetPassword, Complaints, ComplaintDetail, etc.
+    pages/            # Login, Register, Complaints, ComplaintDetail, etc.
     components/       # SideNav, etc.
     api/              # axios instance
     context/          # AuthContext
@@ -32,15 +35,27 @@ client/
 ## Prerequisites
 
 - Node.js 18+
-- MongoDB running (local or cloud)
-- SMTP credentials (Gmail app password or Mailtrap)
+- MongoDB (local or Atlas)
+- Git
+- Postman for API testing
 
 ---
 
-## Environment Variables
+## Setup
 
-Create `.env` in `server/` based on `.env.example`:
+### 1) Clone
+```bash
+git clone https://github.com/emxth/velo-route.git
+cd velo-route
+```
 
+### 2) Server
+```bash
+cd server
+npm install
+```
+
+Create `server/.env` (example):
 ```
 PORT=5000
 MONGO_URI=mongodb://localhost:27017/veloroute
@@ -48,102 +63,186 @@ JWT_SECRET=changeme
 JWT_EXPIRES_IN=1d
 CORS_ORIGIN=http://localhost:5173,http://localhost:3000
 
-# Mail (Gmail SMTP)
-MAIL_HOST=...gmail.com
+MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
-MAIL_USER=youraddress@gmail.com
-MAIL_PASS=your_app_password   # 16-char app password
-MAIL_FROM="VeloRoute Support" <youraddress@gmail.com>
+MAIL_USER=your_email@gmail.com
+MAIL_PASS=your_gmail_app_password
+MAIL_FROM="VeloRoute Support" <your_email@gmail.com>
 ```
 
-> Ensure the server is restarted after editing `.env`.
-
----
-
-## Install & Run
-
+Run server:
 ```bash
-# Server
-cd server
-npm install
-npm run dev    # or npm start
+npm run dev   # or npm start
+```
+Server: `http://localhost:5000`
 
-# Client
+### 3) Client
+```bash
 cd client
 npm install
-npm run dev    # default Vite port 5173
+npm run dev
+```
+Client: `http://localhost:5173`
+
+---
+
+## API Base URL
+```
+http://localhost:5000/api
+```
+
+All protected endpoints require:
+```
+Authorization: Bearer <JWT_TOKEN>
 ```
 
 ---
 
-## API Overview (Base: `http://localhost:5000/api`)
+## Authentication APIs
 
-### Auth
-- `POST /auth/register` — `{ name, email, password, role? }`
-- `POST /auth/login` — `{ email, password }` → `{ token, user }`
-- `POST /auth/forgot` — `{ email }` (sends OTP email)
-- `POST /auth/reset` — `{ email, otp, newPassword }`
-- `GET /auth/me` — Bearer token required
-- `GET /auth/admin/ping` — Bearer + `admin`
+### Register
+```
+POST /auth/register
+```
+```json
+{ "name": "Alice Admin", "email": "admin@test.com", "password": "secret123", "role": "admin" }
+```
 
-### Users
-- `GET /users` — admin only
-- `GET /users/me` — current user
-- `PUT /users/me` — update current
+### Login
+```
+POST /auth/login
+```
+```json
+{ "email": "admin@test.com", "password": "secret123" }
+```
+Response includes `token` and `user`.
+
+### Forgot Password (OTP email)
+```
+POST /auth/forgot
+```
+```json
+{ "email": "admin@test.com" }
+```
+
+### Reset Password with OTP
+```
+POST /auth/reset
+```
+```json
+{ "email": "admin@test.com", "otp": "123456", "newPassword": "newSecret123" }
+```
+
+### Current User
+```
+GET /auth/me   (Bearer token)
+GET /auth/admin/ping   (Bearer admin)
+```
+
+---
+
+## User Management APIs (Bearer required)
+
+- `GET /users` (admin)
+- `GET /users/me`
+- `PUT /users/me` — update current user
 - `DELETE /users/me`
 - `GET /users/me/permissions`
-- `GET /users/:id/permissions` — admin
-- `PUT /users/:id/permissions` — admin (role change)
-- `GET /users/:id` — admin
+- `GET /users/:id/permissions` (admin)
+- `PUT /users/:id/permissions` (admin) — change role
+- `GET /users/:id` (admin)
 
-### Complaints & Feedback
-- `POST /complaints` — create complaint
-- `POST /complaints/feedback` — create feedback
-- `GET /complaints` — admin: all; user: own
-- `GET /complaints/:id` — admin or owner
-- `PUT /complaints/:id/status` — admin (pending|resolved)
-- `PUT /complaints/:id/response` — admin (text)
-- `DELETE /complaints/:id` — admin
-
-### Other modules (present but not detailed here)
-- Bookings: `/bookings`
-- Routes: `/routes`
-- Vehicles: `/vehicles`
-- Schedules: `/schedules`
-- Departments: `/departments`
+Sample update:
+```
+PUT /users/me
+Authorization: Bearer <token>
+Content-Type: application/json
+{ "name": "Duleesha Sewmini" }
+```
 
 ---
 
-## Authentication
+## Complaint & Feedback APIs (Bearer required)
 
-All protected routes require `Authorization: Bearer <JWT>` from `POST /auth/login`.
+### Create Complaint
+```
+POST /complaints
+```
+```json
+{
+  "category": "road",
+  "subject": "Pothole on main street",
+  "message": "Large pothole causing delays.",
+  "location": { "lat": 7.8731, "lng": 80.7718, "label": "Near bridge" }
+}
+```
 
-### Quick Auth Flow (Postman):
-1. Register (or use existing user)
-2. Login → copy `token`
-3. Set Postman “Authorization” type Bearer Token with that `token`
-4. Call protected endpoints
+### Create Feedback
+```
+POST /complaints/feedback
+```
+```json
+{
+  "category": "transport",
+  "subject": "Thanks for the new route",
+  "message": "Service is smoother now."
+}
+```
+
+### List Complaints
+```
+GET /complaints
+```
+- Admin: all
+- User: own
+
+### Get Complaint by ID
+```
+GET /complaints/:id
+```
+
+### Update Status (admin)
+```
+PUT /complaints/:id/status
+{ "status": "resolved" }
+```
+
+### Add Admin Response (admin)
+```
+PUT /complaints/:id/response
+{ "text": "We dispatched a crew to fix this." }
+```
+
+### Delete Complaint (admin)
+```
+DELETE /complaints/:id
+```
 
 ---
 
-## Client (SPA)
+## Bookings / Routes / Vehicles / Schedules / Departments
 
-Key pages:
-- `Login` (`/login`), `Register` (`/register`)
-- `ForgotPassword` (`/forgot-password`): requests OTP
-- `ResetPassword` (`/reset-password`): uses OTP + new password, then redirects to login
-- `ComplaintsPage` (`/complaints`): submit complaint/feedback with location search (Nominatim) or “Use my location”, list own/all
-- `ComplaintDetailPage` (`/complaints/:id`): view; admin can update status/response/delete
-- `SideNav`: includes Complaints link (public for authenticated users)
+Modules are mounted under:
+- `/bookings`
+- `/routes`
+- `/vehicles`
+- `/schedules`
+- `/departments`
+
+(Protected by JWT; some may require admin depending on route-level guards.)
 
 ---
 
-## Location Usability (Client)
+## Testing with Token (Postman)
 
-- Free search via OpenStreetMap Nominatim (no key); debounced queries
-- “Use my location” via browser geolocation
-- Manual lat/lng still possible
-- Stored as GeoJSON Point ([lng, lat]) server-side, returned as { lat, lng, label }
+1) Login to get token:
+```
+POST http://localhost:5000/api/auth/login
+{ "email": "admin@test.com", "password": "secret123" }
+```
+
+2) Use token in subsequent requests:
+Header: `Authorization: Bearer <token>`
 
 ---
 
@@ -154,31 +253,35 @@ Key pages:
 cd server
 npm test
 ```
-Covers auth service (register/login/reset), complaints, middleware, etc.
+Covers services (auth, complaints, users), middleware (auth/authorize), etc.
 
-### Common Auth Testing Issues
-- 401/403: Ensure Bearer token is set from `/auth/login`
-- 500 on `/auth/forgot`: Ensure MAIL_USER/MAIL_PASS loaded; restart server after `.env` changes
+### Integration Tests (server)
+```bash
+cd server
+npm run test:integration
+```
+Uses supertest + mongodb-memory-server for auth, users, complaints, bookings.
+
+### Testing Environment
+- Set `NODE_ENV=test`
+- In-memory MongoDB (no external DB)
+- Mailer is mocked in tests to avoid SMTP calls
 
 ---
 
-## Troubleshooting Mail
-- Use a real Gmail App Password (not your login)
-- Check logs (`logs/error.log`) and console for `Missing credentials for "PLAIN"` (means env not loaded or blanks)
-- For testing without real email, use Mailtrap credentials.
+## Security Practices
 
----
-
-## Security & Rate Limits
-- Rate limit: `/api` max 100 requests / 15 minutes per IP
-- JWT required for protected routes; role guard for admin endpoints
+- JWT authentication
+- Role-based authorization
+- Password hashing (bcrypt via User model pre-save)
+- Rate limiting on `/api`
 - CORS restricted to configured origins
+- Input validation in services and middleware
 
 ---
 
-## Run Order (local quick start)
-1. Start MongoDB
-2. Create `.env` with valid `MAIL_USER/MAIL_PASS`
-3. `cd server && npm install && npm run dev`
-4. `cd client && npm install && npm run dev`
-5. Register → Login → use Bearer token in Postman for protected APIs
+## Common Issues
+
+- 401/403: Missing or invalid Bearer token; re-login and retry.
+- SMTP errors: ensure `MAIL_USER`/`MAIL_PASS` are set (Gmail app password), restart server after updating `.env`.
+- Mongoose deprecation warnings: ensure `returnDocument: "after"` in findByIdAndUpdate calls where needed.
