@@ -115,6 +115,8 @@ Artillery example (complaints flow):
 ```bash
 cd server
 npx artillery run tests/performance/complaints.yml
+
+artillery run tests/performance-tests/booking-flow.yml
 ```
 Configure target/auth in the YAML before running.
 
