@@ -1,0 +1,75 @@
+config:
+  target: "http://localhost:5000"
+  phases:
+    - duration: 20
+      arrivalRate: 1
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "Schedule Management CRUD Flow"
+    flow:
+
+      # ---------------- LOGIN ----------------
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "dini@admin.com"
+            password: "Dini123"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+
+      - log: "Login successful"
+
+      # CREATE SCHEDULE 
+      - post:
+          url: "/api/schedules/addSchedule"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            routeId: "69a184eaf7efe54c79182c4a"
+            vehicleID: "699dcd600507e37d3e75844d"
+            depatureTime: "2026-03-01T09:00:00Z"
+            frequency: "DAILY"
+          capture:
+            - json: "$._id"
+              as: "scheduleId"
+
+      - log: "Schedule Created: id={{ scheduleId }}"
+
+      #GET ALL SCHEDULES
+      - get:
+          url: "/api/schedules/"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+
+      - log: "Fetched all schedules"
+
+      # GET SCHEDULE BY ID 
+      - get:
+          url: "/api/schedules/{{ scheduleId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+
+      - log: "Fetched schedule by ID"
+
+      # UPDATE SCHEDULE 
+      - put:
+          url: "/api/schedules/updateSchedule/{{ scheduleId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            depatureTime: "2026-03-01T09:00:00Z"
+            status: "SCHEDULED"
+
+      - log: "Schedule Updated: id={{ scheduleId }}"
+
+      # DELETE SCHEDULE
+      - delete:
+          url: "/api/schedules/remove/{{ scheduleId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+
+      - log: "Schedule Deleted: id={{ scheduleId }}"

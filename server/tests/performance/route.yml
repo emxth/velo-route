@@ -1,0 +1,107 @@
+config:
+  target: "http://localhost:5000"
+  phases:
+    - duration: 10
+      arrivalRate: 2
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "Login & Route Manage Flow"
+    flow:
+      # Log in to the system
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "dini@admin.com"
+            password: "Dini123"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+
+      # CREATE ROUTES
+      - post:
+          url: "/api/routes/addRoute"
+          headers:
+            Authorization: "Bearer {{authToken}}"
+          json:
+            name: "Ragama to Kadawatha"
+            routeNumber: "A5"
+            transportType: "Bus"
+            busNumber: "222"
+            startLocation:
+              name: "Kadawatha"
+              district: "Gampaha"
+              lat: 7.0015
+              lng: 79.9582
+            endLocation:
+              name: "Ragama"
+              district: "Gampaha"
+              lat: 7.0300
+              lng: 79.9200
+            stops:
+              - name: "Ragama"
+                lat: 7.0015
+                lng: 79.9582
+                fareFromPrevious: 0
+              - name: "Delpe"
+                lat: 7.0209
+                lng: 79.9355
+                fareFromPrevious: 30
+              - name: "Kadawatha"
+                lat: 7.0300
+                lng: 79.9200
+                fareFromPrevious: 45
+          capture:
+            - json: "$._id"
+              as: "routeId"
+
+      - log: "Route Created : id={{routeId}}"
+
+      # Get All Routes
+      - get:
+          url: "/api/routes/"
+          headers:
+            Authorization: "Bearer {{authToken}}"
+
+      - log: "Fetch all routes"
+
+      # Get Route by ID
+      - get:
+          url: "/api/routes/route/{{routeId}}"
+          headers:
+            Authorization: "Bearer {{authToken}}"
+
+      - log: "Fetch route by Id"
+
+      # Update Route
+      - put:
+          url: "/api/routes/updateRoute/{{routeId}}"
+          headers:
+            Authorization: "Bearer {{authToken}}"
+          json:
+            name: "Kadawatha to Ragama Updated"
+            stops:
+              - name: "Kadawatha"
+                lat: 7.0015
+                lng: 79.9582
+                fareFromPrevious: 0
+              - name: "Mahara"
+                lat: 7.0150
+                lng: 79.9450
+                fareFromPrevious: 25
+              - name: "Ragama"
+                lat: 7.0300
+                lng: 79.9200
+                fareFromPrevious: 40
+
+      - log: "Route Updated: id={{routeId}}"
+
+      # Delete Route
+      - delete:
+          url: "/api/routes/clearRoute/{{routeId}}"
+          headers:
+            Authorization: "Bearer {{authToken}}"
+
+      - log: "Route Deleted: id={{routeId}}"
