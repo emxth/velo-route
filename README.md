@@ -114,6 +114,55 @@ npm run dev    # default Vite port 5173
 
 ---
 
+## Routes Management
+Handles transport routes,stops,distance calculation and estimated travel duration.
+
+--- Features ---
+- create transport routes with multiple stops
+- Automatically calculate route distance and duration using OSRM API
+- Update route stops and recalculate travel data
+- Retrieve route details
+- Delete routes
+
+---API Endpoints---
+- `POST /api/routes/addRoute` -Create New Transport Route
+- `GET /api/routes/` - Get all transport routes
+- `GET /api/routes/route/:id` - Get specific Route
+- `PUT /api/routes/updateRoute/:id` - Update Existing Route
+- `DELETE /api/routes/clearRoute/:id` - Delete Route
+
+--- Third Party API ---
+OSRM (Open Source Routing Machine) - Used for calculate route distance and duration
+
+
+## Schedule Management
+
+Manage vehicle trip schedules for routes and ensure vehicles are not double-scheduled until finished trip
+
+--Features--
+ 1. Assign Vehicle to routes
+ 2. Automatically calculate arrival time based on route duration
+ 3. Detect schedule conflict
+ 4. Prevent Vehicle assignment when previous trip is not completed
+ 5. Retrieve and manage schedules
+
+--- API Endpoints ---
+- `/api/schedules/addSchedule` - Add New Schedul
+- `/api/schedules/` - Get all schedules
+- `/api/schedules/:id` - Get specific schedule by using schedule id
+- `/api/schedules/updateSchedule/:id` - Update Existing  schedule
+- `/api/schedules/:id` - Delete specific schedule
+
+--- Conflict Detection Logic ---
+
+The system prevent scheduling conflicts by checking:
+
+  - Vehicle already assigned to another trip
+  - Trip overlapping with existing schedules
+  - Vehicle still running previous trip
+
+
+
 ## Authentication
 
 All protected routes require `Authorization: Bearer <JWT>` from `POST /auth/login`.
