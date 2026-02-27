@@ -1,0 +1,87 @@
+config:
+  target: "http://localhost:5000"
+  phases:
+    - duration: 10
+      arrivalRate: 1
+  defaults:
+    headers:
+      Content-Type: "application/json"
+  payload:
+    path: "trips.csv"
+    fields:
+      - transportType
+      - tripId
+      - seatNumber
+      - coachNumber
+      - fromLocation
+      - toLocation
+    order: sequence   
+
+scenarios:
+  - name: "Safe Booking Flow Test"
+    flow:
+
+      # LOGIN
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "john@example.com"
+            password: "Password123"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+
+      # CREATE BOOKING
+      - post:
+          url: "/api/bookings/"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            transportType: "{{ transportType }}"
+            tripId: "{{ tripId }}"          
+            seatNumbers:
+              - "{{ seatNumber }}"          
+            phoneNumber: "+94712345678"
+            coachNumber: "{{ coachNumber }}" 
+            fromLocation: "{{ fromLocation }}"
+            toLocation: "{{ toLocation }}"
+            departureTime: "2026-03-01T15:00:00Z"
+          capture:
+            - json: "$._id"
+              as: "bookingId"
+
+      - log: "Booking Created: id={{ bookingId }}"
+
+      # ---------------- GET THE CREATED BOOKING ----------------
+      - get:
+          url: "/api/bookings/me"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      
+      - log: "Read Booking: id={{ bookingId }}"
+
+      # ---------------- UPDATE BOOKING ----------------
+      - patch:
+          url: "/api/bookings/{{ bookingId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            phoneNumber: "+94719876543"  
+        
+      - log: "Booking updated: id={{ bookingId }}"
+
+      # ---------------- CANCEL BOOKING ----------------
+      - patch:
+          url: "/api/bookings/{{ bookingId }}/cancel"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+
+      - log: "Booking cancelled: id={{ bookingId }}"
+
+       # ---------------- DELETE CANCELLED BOOKING ----------------
+      - delete:
+          url: "/api/bookings/{{ bookingId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+
+      - log: "Booking deleted: id={{ bookingId }}"

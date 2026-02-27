@@ -1,0 +1,15 @@
+TRAIN,TRAIN1,B1,C1,Colombo,Galle
+TRAIN,TRAIN2,B2,C1,Colombo,Kandy
+TRAIN,TRAIN3,B4,C2,Galle,Matara
+TRAIN,TRAIN5,B2,C2,Kandy,Galle
+TRAIN,TRAIN6,B8,C1,Colombo,Kandy
+TRAIN,TRAIN7,B1,C2,Galle,Matara
+TRAIN,TRAIN8,B10,C2,Kandy,Galle
+TRAIN,TRAIN10,A2,C10,Kandy,Galle
+TRAIN,TRAIN2,B8,C8,Galle,Kandy
+TRAIN,TRAIN5,A1,C7,Galle,Matara
+TRAIN,TRAIN3,C10,C9,Kandy,Galle
+BUS,BUS2,B2,,Kandy,Galle
+BUS,BUS9,B8,,Colombo,Kandy
+BUS,BUS8,B1,,Galle,Matara
+BUS,BUS1,B10,,Kandy,Galle
