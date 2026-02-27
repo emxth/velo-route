@@ -43,17 +43,21 @@ export const getDepartmentById = async (id) => {
 };
 
 export const getAllDepartments = async (page = 1, limit = 10) => {
-  const skip = (page - 1) * limit;
-  const departments = await departmentRepo.findAll({}, skip, limit);
+  // Parse to numbers at the beginning
+  const pageNum = parseInt(page) || 1;
+  const limitNum = parseInt(limit) || 10;
+
+  const skip = (pageNum - 1) * limitNum;
+  const departments = await departmentRepo.findAll({}, skip, limitNum);
   const total = await departmentRepo.countDocuments();
 
   return {
     data: departments,
     pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page: pageNum,
+      limit: limitNum,
       total,
-      pages: Math.ceil(total / limit),
+      pages: Math.ceil(total / limitNum),
     },
   };
 };
