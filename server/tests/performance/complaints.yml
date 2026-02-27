@@ -1,0 +1,43 @@
+config:
+  target: "http://localhost:5000"
+  phases:
+    - duration: 10 # seconds
+      arrivalRate: 2 # virtual users per second
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "Register + Complaint flow"
+    flow:
+      # REGISTER (captures token from response)
+      - post:
+          url: "/api/auth/register"
+          json:
+            name: "Perf User {{ $randomInt(1000,9999) }}"
+            email: "perf-{{ $randomInt(100000,999999) }}@test.com"
+            password: "secret123"
+            role: "user"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+
+      # CREATE COMPLAINT
+      - post:
+          url: "/api/complaints"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            category: "road"
+            subject: "Perf test {{ $randomInt(1000,9999) }}"
+            message: "Load-generated complaint."
+            location:
+              lat: 7.8731
+              lng: 80.7718
+              label: "Perf"
+
+      # LIST COMPLAINTS
+      - get:
+          url: "/api/complaints"
+          headers:
+            Authorization: "Bearer {{ authToken }}"

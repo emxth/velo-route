@@ -1,46 +1,66 @@
-# VeloRoute — Server + Client
+# VeloRoute — Smart Rural Transportation System
 
-End-to-end app with authentication, role-based access, complaints/feedback with location, booking/routes/vehicles/departments, and password reset via email OTP.
+Full-stack MERN application (MongoDB, Express, React, Node.js) with authentication, role-based access, complaints/feedback (with geolocation), bookings, routes, vehicles, schedules, departments, and password reset via email OTP.
 
----
+## Contents
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Setup](#setup)
+- [Environment Variables](#environment-variables)
+- [Scripts](#scripts)
+- [Testing](#testing)
+- [Performance Tests](#performance-tests)
+- [Documentation](#documentation)
+- [Security Notes](#security-notes)
+- [Troubleshooting](#troubleshooting)
 
 ## Project Structure
-
 ```
+docs/
+  API_DOCUMENTATION.md
 server/
   src/
     config/           # db, logger
-    controllers/      # auth
+    controllers/      # auth, complaints, etc.
     middleware/       # auth, roles, requestLogger, errorHandler
     models/           # User, Complaint, etc.
     repositories/     # data access layer
     routes/           # auth, users, complaints, bookings, routes, vehicles, schedules, departments
-    services/         # business logic (authService, complaintService, etc.)
+    services/         # business logic
     utils/            # mailer, token, AppError
   tests/
-    unit/             # Jest unit tests
+    unit/
+    integration/
+    performance/
 client/
   src/
-    pages/            # Login, Register, ForgotPassword, ResetPassword, Complaints, ComplaintDetail, etc.
+    pages/            # Login, Register, Complaints, ComplaintDetail, etc.
     components/       # SideNav, etc.
     api/              # axios instance
     context/          # AuthContext
 ```
 
----
-
 ## Prerequisites
-
 - Node.js 18+
-- MongoDB running (local or cloud)
-- SMTP credentials (Gmail app password or Mailtrap)
+- MongoDB (local or Atlas)
+- Git
+- Postman or curl for API checks
 
----
+## Setup
 
-## Environment Variables
+### 1) Clone
+```bash
+git clone https://github.com/emxth/velo-route.git
+cd velo-route
+```
 
-Create `.env` in `server/` based on `.env.example`:
+### 2) Server
+```bash
+cd server
+npm install
+```
 
+Create `server/.env` (example):
 ```
 PORT=5000
 MONGO_URI=mongodb://localhost:27017/veloroute
@@ -48,31 +68,26 @@ JWT_SECRET=changeme
 JWT_EXPIRES_IN=1d
 CORS_ORIGIN=http://localhost:5173,http://localhost:3000
 
-# Mail (Gmail SMTP)
-MAIL_HOST=...gmail.com
+MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
-MAIL_USER=youraddress@gmail.com
-MAIL_PASS=your_app_password   # 16-char app password
-MAIL_FROM="VeloRoute Support" <youraddress@gmail.com>
+MAIL_USER=your_email@gmail.com
+MAIL_PASS=your_gmail_app_password
+MAIL_FROM="VeloRoute Support" <your_email@gmail.com>
 ```
 
-> Ensure the server is restarted after editing `.env`.
-
----
-
-## Install & Run
-
+Run server:
 ```bash
-# Server
-cd server
-npm install
-npm run dev    # or npm start
+npm run dev   # or npm start
+```
+Server base: `http://localhost:5000`
 
-# Client
+### 3) Client
+```bash
 cd client
 npm install
-npm run dev    # default Vite port 5173
+npm run dev
 ```
+Client base: `http://localhost:5173`
 
 ---
 
@@ -188,46 +203,46 @@ Key pages:
 ---
 
 ## Location Usability (Client)
+## Environment Variables
+- Server expects the variables shown above (.env in `server/`).
+- For tests, set `NODE_ENV=test`; integration tests use in-memory Mongo and mock mailer.
 
-- Free search via OpenStreetMap Nominatim (no key); debounced queries
-- “Use my location” via browser geolocation
-- Manual lat/lng still possible
-- Stored as GeoJSON Point ([lng, lat]) server-side, returned as { lat, lng, label }
+## Scripts
+From `server/`:
+- `npm run dev` — start backend (dev)
+- `npm start` — start backend (prod)
+- `npm test` — unit tests
+- `npm run test:integration` — integration tests
+- `npm run test:performance` — performance (Artillery) if added to package.json
 
----
+From `client/`:
+- `npm run dev` — start frontend
+- `npm run build` — production build
 
 ## Testing
+- **Unit:** `npm test`
+- **Integration:** `npm run test:integration` (uses mongodb-memory-server, supertest; mailer mocked)
+- Test details: `docs/testing-report.md`
 
-### Unit Tests (server)
+## Performance Tests
+Artillery example (complaints flow):
 ```bash
 cd server
-npm test
+npx artillery run tests/performance/complaints.yml
 ```
-Covers auth service (register/login/reset), complaints, middleware, etc.
+Configure target/auth in the YAML before running.
 
-### Common Auth Testing Issues
-- 401/403: Ensure Bearer token is set from `/auth/login`
-- 500 on `/auth/forgot`: Ensure MAIL_USER/MAIL_PASS loaded; restart server after `.env` changes
+## Documentation
+- API reference: `docs/API_DOCUMENTATION.md`
 
----
-
-## Troubleshooting Mail
-- Use a real Gmail App Password (not your login)
-- Check logs (`logs/error.log`) and console for `Missing credentials for "PLAIN"` (means env not loaded or blanks)
-- For testing without real email, use Mailtrap credentials.
-
----
-
-## Security & Rate Limits
-- Rate limit: `/api` max 100 requests / 15 minutes per IP
-- JWT required for protected routes; role guard for admin endpoints
+## Security Notes
+- JWT auth with role-based authorization
+- Password hashing via User model pre-save
+- Rate limiting on `/api` (100 req / 15 min)
 - CORS restricted to configured origins
+- Use a Gmail App Password (or Mailtrap) for MAIL_PASS; restart server after .env changes
 
----
-
-## Run Order (local quick start)
-1. Start MongoDB
-2. Create `.env` with valid `MAIL_USER/MAIL_PASS`
-3. `cd server && npm install && npm run dev`
-4. `cd client && npm install && npm run dev`
-5. Register → Login → use Bearer token in Postman for protected APIs
+## Troubleshooting
+- 401/403: Ensure `Authorization: Bearer <token>` is present; re-login if expired.
+- SMTP errors: Verify `MAIL_USER`/`MAIL_PASS` and restart server.
+- Mongoose `findOneAndUpdate` deprecation: use `{ returnDocument: "after" }` where applicable.
