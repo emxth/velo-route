@@ -102,7 +102,7 @@ describe("Schedule Management Integration", () => {
 
     test("Should create Schedule successfully", async () => {
 
-        const departureTime = "2026-03-01T08:10:00Z";
+        const depatureTime = "2026-03-01T08:10:00Z";
 
         const res = await request(app)
             .post("/api/schedules/addSchedule")
@@ -110,7 +110,7 @@ describe("Schedule Management Integration", () => {
             .send({
                 routeId,
                 vehicleID: vehicleId,
-                depatureTime: departureTime,
+                depatureTime: depatureTime,
                 frequency: "DAILY",
                 status: "SCHEDULED"
             });
@@ -118,7 +118,7 @@ describe("Schedule Management Integration", () => {
         expect(res.statusCode).toBe(201);
         expect(res.body.routeId).toBe(routeId.toString());
 
-        const departure = new Date(departureTime)
+        const departure = new Date(depatureTime)
         const arrival = new Date(res.body.arrivalTime);
         expect(arrival.getTime()).toBeGreaterThan(departure.getTime());
     });

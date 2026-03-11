@@ -58,7 +58,7 @@ describe("createSchedule()", () => {
 
         await expect(
             service.createSchedule({
-                routerId: "Invalid",
+                routeId: "Invalid",
                 vehicleID: "vehi2",
                 depatureTime: "2026-03-01T08:10:00Z"
             })
@@ -119,7 +119,7 @@ describe("Schedule - UpdateSchedule()", () => {
 
     it("should update schedule successfully", async () => {
         scheduleRepo.findById.mockResolvedValue({
-            routerId: "route1",
+            routeId: "route1",
             depatureTime: "2026-02-25T08:00:00Z",
             vehicleID: "vehicle1"
         });
