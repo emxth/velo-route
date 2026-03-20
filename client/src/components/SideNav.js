@@ -29,6 +29,7 @@ const NAV_GROUPS = [
     items: [
       // mark as public so it bypasses allowed filter
       { key: "addBooking", label: "Add Booking", to: "/addBooking", public: true },
+      { key: "viewBookings", label: "View Bookings", to: "/viewBookings", public: true },
     ],
   },
 ];

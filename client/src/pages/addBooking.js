@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { ChevronDown, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronDown, X, AlertCircle, CheckCircle } from 'lucide-react';
+import api from '../api/axios';
 
 // Seat Selection Modal Component
 const SeatSelectionModal = ({ isOpen, onClose, onSelectSeats, transportType, selectedSeats }) => {
   const [localSelectedSeats, setLocalSelectedSeats] = useState(selectedSeats || []);
   
   // Define seat layout based on transport type
-  const seatLayout = transportType === 'Train' 
+  const seatLayout = transportType === 'TRAIN' 
     ? { rows: 6, cols: 5 } // 30 seats for train (reduced from 48)
     : { rows: 8, cols: 4 }; // 32 seats for bus (reduced from 48)
 
@@ -143,13 +145,15 @@ const SeatSelectionModal = ({ isOpen, onClose, onSelectSeats, transportType, sel
 
 // Main Trip Booking Form Component
 const AddBooking = () => {
+  const navigate = useNavigate();
+  
   // Hardcoded fare per seat (100)
-  const FARE_PER_SEAT = 100;
+  const FARE_PER_SEAT = 500;
 
   // Form State
   const [formData, setFormData] = useState({
     phoneNumber: '',
-    transportType: 'Train',
+    transportType: 'BUS',
     tripId: '',
     seatNumbers: [],
     coachNumber: '',
@@ -164,6 +168,11 @@ const AddBooking = () => {
 
   // Form Errors State
   const [errors, setErrors] = useState({});
+  
+  // Loading and feedback state
+  const [isLoading, setIsLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Calculate amount based on seat count
   const calculateAmount = (seatCount) => {
@@ -174,11 +183,11 @@ const AddBooking = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    // Phone Number Validation (10-digit Indian phone number)
+    // Phone Number Validation (Sri Lanka format: +94XXXXXXXXX)
     if (!formData.phoneNumber.trim()) {
       newErrors.phoneNumber = 'Phone number is required';
-    } else if (!/^[6-9]\d{9}$/.test(formData.phoneNumber)) {
-      newErrors.phoneNumber = 'Enter a valid 10-digit phone number';
+    } else if (!/^\+94\d{9}$/.test(formData.phoneNumber)) {
+      newErrors.phoneNumber = 'Enter a valid phone number in format: +94XXXXXXXXX';
     }
 
     // Trip ID Validation
@@ -192,7 +201,7 @@ const AddBooking = () => {
     }
 
     // Coach Number Validation (only for trains)
-    if (formData.transportType === 'Train' && !formData.coachNumber.trim()) {
+    if (formData.transportType === 'TRAIN' && !formData.coachNumber.trim()) {
       newErrors.coachNumber = 'Coach number is required for train bookings';
     }
 
@@ -214,6 +223,13 @@ const AddBooking = () => {
     // Departure Time Validation
     if (!formData.departureTime.trim()) {
       newErrors.departureTime = 'Departure time is required';
+    } else {
+      // Check if departure time is in the future
+      const selectedTime = new Date(formData.departureTime);
+      const now = new Date();
+      if (selectedTime <= now) {
+        newErrors.departureTime = 'Departure time must be in the future';
+      }
     }
 
     setErrors(newErrors);
@@ -255,13 +271,60 @@ const AddBooking = () => {
   };
 
   // Handle Form Submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMessage('');
+    setSuccessMessage('');
     
-    if (validateForm()) {
-      console.log('Form Data:', formData);
-      alert(`Booking submitted successfully!\nTotal Amount: ₹${formData.amount}`);
-      // API call would go here
+    if (!validateForm()) {
+      setErrorMessage('Please fix the validation errors above');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      // Prepare booking data for backend
+      const bookingData = {
+        phoneNumber: formData.phoneNumber,
+        transportType: formData.transportType,
+        tripId: formData.tripId,
+        seatNumbers: formData.seatNumbers,
+        coachNumber: formData.coachNumber || undefined,
+        fromLocation: formData.fromLocation,
+        toLocation: formData.toLocation,
+        departureTime: formData.departureTime,
+      };
+
+      // Make API call to create booking
+      const response = await api.post('/bookings', bookingData);
+
+      setSuccessMessage('Booking created successfully! Redirecting...');
+      setIsLoading(false);
+      
+      // Reset form
+      setFormData({
+        phoneNumber: '',
+        transportType: 'BUS',
+        tripId: '',
+        seatNumbers: [],
+        coachNumber: '',
+        fromLocation: '',
+        toLocation: '',
+        departureTime: '',
+        amount: 0,
+      });
+
+      // Redirect to view bookings after 2 seconds
+      setTimeout(() => {
+        navigate('/viewBookings');
+      }, 2000);
+
+    } catch (err) {
+      console.error('Booking error:', err);
+      const errorMsg = err.response?.data?.message || err.message || 'Failed to create booking. Please try again.';
+      setErrorMessage(errorMsg);
+      setIsLoading(false);
     }
   };
 
@@ -273,6 +336,28 @@ const AddBooking = () => {
           <h1 className="text-4xl font-bold text-gray-800 mb-2">Trip Booking</h1>
           <p className="text-gray-600">Book your journey with ease</p>
         </div>
+
+        {/* Error Message */}
+        {errorMessage && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+            <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
+            <div>
+              <p className="text-red-800 font-semibold">Error</p>
+              <p className="text-red-700 text-sm">{errorMessage}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Success Message */}
+        {successMessage && (
+          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
+            <CheckCircle className="text-green-600 flex-shrink-0 mt-0.5" size={20} />
+            <div>
+              <p className="text-green-800 font-semibold">Success</p>
+              <p className="text-green-700 text-sm">{successMessage}</p>
+            </div>
+          </div>
+        )}
 
         {/* Form Card */}
         <form
@@ -289,13 +374,12 @@ const AddBooking = () => {
               name="phoneNumber"
               value={formData.phoneNumber}
               onChange={handleInputChange}
-              placeholder="Enter 10-digit phone number"
+              placeholder="e.g., +94712345678"
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition ${
                 errors.phoneNumber
                   ? 'border-red-500 focus:ring-red-500'
                   : 'border-gray-300 focus:ring-blue-500'
               }`}
-              maxLength="10"
             />
             {errors.phoneNumber && (
               <p className="text-red-500 text-sm mt-1">{errors.phoneNumber}</p>
@@ -314,8 +398,8 @@ const AddBooking = () => {
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white cursor-pointer"
               >
-                <option value="Train">Train</option>
-                <option value="Bus">Bus</option>
+                <option value="BUS">Bus</option>
+                <option value="TRAIN">Train</option>
               </select>
               {/* Custom Dropdown Icon */}
               <ChevronDown
@@ -413,7 +497,7 @@ const AddBooking = () => {
           </div>
 
           {/* Coach Number Field (Conditional - Only for Trains) */}
-          {formData.transportType === 'Train' && (
+          {formData.transportType === 'TRAIN' && (
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Coach Number <span className="text-red-500">*</span>
@@ -504,9 +588,21 @@ const AddBooking = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition duration-200 shadow-md hover:shadow-lg"
+            disabled={isLoading}
+            className={`w-full font-bold py-3 rounded-lg transition duration-200 shadow-md text-white ${
+              isLoading
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg'
+            }`}
           >
-            Book Trip
+            {isLoading ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Processing...</span>
+              </div>
+            ) : (
+              'Book Trip'
+            )}
           </button>
         </form>
       </div>

@@ -18,6 +18,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 //Booking pages
 import AddBooking from "./pages/addBooking";
+import ViewBookings from "./pages/ViewBookings";
 
 const Unauthorized = () => <div>Unauthorized</div>;
 
@@ -61,6 +62,7 @@ function App() {
             <Route path="/complaints/:id" element={<ComplaintDetailPage />} />
             {/* Booking routes */}
             <Route path="/addBooking" element={<AddBooking />} />
+            <Route path="/viewBookings" element={<ViewBookings />} />
           </Route>
         </Route>
       </Routes>
