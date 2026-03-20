@@ -32,8 +32,8 @@ export const createCheckoutSession = async (bookingId) => {
       },
     ],
     mode: "payment",
-    success_url: `${process.env.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.CLIENT_URL}/cancel`,
+    success_url: `${process.env.CLIENT_URL}/viewBookings?payment=success&session_id={CHECKOUT_SESSION_ID}&bookingId=${booking._id}`,
+    cancel_url: `${process.env.CLIENT_URL}/viewBookings?payment=cancel&bookingId=${booking._id}`,
   });
 
   // Save session ID only (paymentIntent does NOT exist yet)

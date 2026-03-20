@@ -240,12 +240,12 @@ export const deleteBooking = async (bookingId, userId) => {
     throw new ApiError(403, "Unauthorized");
   }
 
-  if (booking.bookingStatus !== "CANCELLED") {
-    throw new ApiError(
-      400,
-      "Cannot delete a confirmed booking. Cancel it first."
-    );
-  }
+  // if (booking.bookingStatus !== "CANCELLED") {
+  //   throw new ApiError(
+  //     400,
+  //     "Cannot delete a confirmed booking. Cancel it first."
+  //   );
+  // }
 
   await bookingRepo.deleteById(bookingId);
 

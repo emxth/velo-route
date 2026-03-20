@@ -344,8 +344,8 @@ const ViewBookings = () => {
                                         </button>
                                     )}
 
-                                    {/* Delete Button - Only if CANCELLED */}
-                                    {booking.bookingStatus === 'CANCELLED' && (
+                                    {/* Delete Button - If PENDING or CANCELLED */}
+                                    {(booking.bookingStatus === 'PENDING' || booking.bookingStatus === 'CANCELLED') && (
                                         <button
                                             onClick={() => handleDeleteBooking(booking._id)}
                                             disabled={deleteLoading === booking._id}

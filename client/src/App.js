@@ -19,6 +19,7 @@ import ResetPassword from "./pages/ResetPassword";
 //Booking pages
 import AddBooking from "./pages/addBooking";
 import ViewBookings from "./pages/ViewBookings";
+import UpdateBooking from "./pages/UpdateBooking";
 
 const Unauthorized = () => <div>Unauthorized</div>;
 
@@ -63,6 +64,7 @@ function App() {
             {/* Booking routes */}
             <Route path="/addBooking" element={<AddBooking />} />
             <Route path="/viewBookings" element={<ViewBookings />} />
+            <Route path="/updateBooking/:id" element={<UpdateBooking />} />
           </Route>
         </Route>
       </Routes>
