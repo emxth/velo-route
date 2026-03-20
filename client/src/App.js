@@ -16,6 +16,8 @@ import ComplaintsPage from "./pages/ComplaintsPage";
 import ComplaintDetailPage from "./pages/ComplaintDetailPage";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+//Booking pages
+import AddBooking from "./pages/addBooking";
 
 const Unauthorized = () => <div>Unauthorized</div>;
 
@@ -57,6 +59,8 @@ function App() {
 
             <Route path="/complaints" element={<ComplaintsPage />} />
             <Route path="/complaints/:id" element={<ComplaintDetailPage />} />
+            {/* Booking routes */}
+            <Route path="/addBooking" element={<AddBooking />} />
           </Route>
         </Route>
       </Routes>

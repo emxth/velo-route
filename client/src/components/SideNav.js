@@ -24,6 +24,13 @@ const NAV_GROUPS = [
       { key: "complaints", label: "View Complaints", to: "/complaints", public: true },
     ],
   },
+  {
+    category: "Bookings Management",
+    items: [
+      // mark as public so it bypasses allowed filter
+      { key: "addBooking", label: "Add Booking", to: "/addBooking", public: true },
+    ],
+  },
 ];
 
 const SideNav = ({ allowed = [] }) => {
