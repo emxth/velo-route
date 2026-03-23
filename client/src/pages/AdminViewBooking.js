@@ -6,6 +6,7 @@ const AdminViewBooking = () => {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
 	const [statusFilter, setStatusFilter] = useState("ALL");
+	const [confirmingBookingId, setConfirmingBookingId] = useState(null);
 
 	useEffect(() => {
 		const fetchBookings = async () => {
@@ -66,6 +67,24 @@ const AdminViewBooking = () => {
 		)
 		.sort((a, b) => new Date(b.departureTime) - new Date(a.departureTime));
 
+	const handleConfirmBooking = async (bookingId) => {
+		try {
+			setError("");
+			setConfirmingBookingId(bookingId);
+			const { data } = await api.put(`/bookings/${bookingId}/confirm`);
+
+			setBookings((prev) =>
+				prev.map((booking) =>
+					booking._id === bookingId ? data : booking
+				)
+			);
+		} catch (err) {
+			setError(err.response?.data?.message || "Failed to confirm booking");
+		} finally {
+			setConfirmingBookingId(null);
+		}
+	};
+
 	if (loading) {
 		return <div className="p-6">Loading bookings...</div>;
 	}
@@ -112,10 +131,13 @@ const AdminViewBooking = () => {
 								<th className="px-4 py-3 text-left">Booking Status</th>
 								<th className="px-4 py-3 text-left">Payment Status</th>
 								<th className="px-4 py-3 text-left">Booked At</th>
+								<th className="px-4 py-3 text-left">Actions</th>
 							</tr>
 						</thead>
 						<tbody>
 							{filteredBookings.map((booking, index) => {
+								const canConfirm =
+									booking.paymentStatus === "PAID" && booking.bookingStatus !== "CONFIRMED";
 								const currentDayKey = getDayKey(booking.departureTime);
 								const previousDayKey =
 									index > 0 ? getDayKey(filteredBookings[index - 1].departureTime) : null;
@@ -125,7 +147,7 @@ const AdminViewBooking = () => {
 								<React.Fragment key={booking._id}>
 									{showDayTitle && (
 										<tr className="border-t bg-neutral-50">
-											<td colSpan={6} className="px-4 py-2 text-xs font-bold tracking-wide text-neutral-700">
+											<td colSpan={7} className="px-4 py-2 text-xs font-bold tracking-wide text-neutral-700">
 												{getDayLabel(booking.departureTime)}
 											</td>
 										</tr>
@@ -145,6 +167,16 @@ const AdminViewBooking = () => {
 										<td className="px-4 py-3">{booking.bookingStatus}</td>
 										<td className="px-4 py-3">{booking.paymentStatus}</td>
 										<td className="px-4 py-3">{formatDate(booking.createdAt)}</td>
+										<td className="px-4 py-3">
+											<button
+												type="button"
+												onClick={() => handleConfirmBooking(booking._id)}
+												disabled={!canConfirm || confirmingBookingId === booking._id}
+												className="rounded bg-green-600 px-3 py-1 text-white disabled:cursor-not-allowed disabled:opacity-50"
+											>
+												{confirmingBookingId === booking._id ? "Confirming..." : "Confirm Booking"}
+											</button>
+										</td>
 									</tr>
 								</React.Fragment>
 								);

@@ -26,7 +26,7 @@ router.post("/:id/pay", protect, bookingController.payBooking);
 router.post("/:id/pay/confirm", protect, authorize("user"), bookingController.confirmPayment);
 
 // Confirm booking manually (for testing SMS)
-router.put("/:id/confirm", protect, authorize("user"), bookingController.confirmBooking);
+router.put("/:id/confirm", protect, authorize("admin"), bookingController.confirmBooking);
 
 // Delete single booking (only if cancelled)
 router.delete("/:id", protect, authorize("user"), bookingController.deleteBookingController);

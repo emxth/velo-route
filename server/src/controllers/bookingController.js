@@ -1,5 +1,5 @@
 import * as bookingService from "../services/bookingService.js";
-import { createCheckoutSession, retrieveSession } from "../services/paymentService.js";
+import { createCheckoutSession } from "../services/paymentService.js";
 import logger from "../config/logger.js";
 
 /*
@@ -88,31 +88,10 @@ export const confirmPayment = async (req, res, next) => {
   }
 };
 
-// Confirm Payment (NEW CORRECT VERSION)
+// Admin confirms booking (payment already validated in service)
 export const confirmBooking = async (req, res, next) => {
   try {
-    const { sessionId } = req.body;
-
-    if (!sessionId) {
-      return res.status(400).json({
-        message: "Session ID is required"
-      });
-    }
-
-    // Retrieve session from Stripe
-    const session = await retrieveSession(sessionId);
-
-    if (!session.payment_intent) {
-      return res.status(400).json({
-        message: "Payment not completed yet"
-      });
-    }
-
-    // Delegate update to booking service
-    const booking = await bookingService.confirmBooking(
-      req.params.id,
-      session.payment_intent
-    );
+    const booking = await bookingService.confirmBooking(req.params.id);
 
     res.json(booking);
 

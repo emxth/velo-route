@@ -164,36 +164,20 @@ export const confirmBooking = async (bookingId) => {
     booking.stripeSessionId = 'dummy_payment_session_id'
   }
 
-  if (!booking.stripeSessionId) {
-    throw new ApiError(400, "No payment session found for this booking");
+  // In normal flow, payment is verified in confirmPayment and persisted before admin confirmation.
+  if (process.env.NODE_ENV !== "test" && (booking.paymentStatus !== "PAID" || !booking.paymentIntentId)) {
+    throw new ApiError(400, "Payment must be completed before booking confirmation");
   }
 
-  // Retrieve session from Stripe
-  //const session = await retrieveSession(booking.stripeSessionId);
-
-  //Added for Testing Stripe
-  var session;
-  if (process.env.NODE_ENV === "test") {
-    session = {
-      id: booking.stripeSessionId,
-      payment_intent: { id: "dummy_payment_intent_id", status: "succeeded" },
-    };
-  } else {
-    session = await retrieveSession(booking.stripeSessionId);
+  if (booking.bookingStatus === "CONFIRMED") {
+    return booking;
   }
 
-  if (!session.payment_intent || session.payment_intent.status !== "succeeded") {
-    throw new ApiError(400, "Payment not completed yet");
-  }
-
-  // Save only the ID, not the whole object
-  booking.paymentIntentId = session.payment_intent.id; 
-  booking.paymentStatus = "PAID";
   booking.bookingStatus = "CONFIRMED";
 
   await booking.save();
 
-  logger.info(`Booking ${bookingId} confirmed with PaymentIntent ${booking.paymentIntentId}`);
+  logger.info(`Booking ${bookingId} confirmed`);
 
   // Send SMS to passenger
   try {
