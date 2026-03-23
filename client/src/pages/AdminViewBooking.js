@@ -112,15 +112,10 @@ const AdminViewBooking = () => {
 								<th className="px-4 py-3 text-left">Booking Status</th>
 								<th className="px-4 py-3 text-left">Payment Status</th>
 								<th className="px-4 py-3 text-left">Booked At</th>
-								<th className="px-4 py-3 text-left">Actions</th>
 							</tr>
 						</thead>
 						<tbody>
 							{filteredBookings.map((booking, index) => {
-								const hideConfirmButton =
-									booking.paymentStatus === "PAID" && booking.bookingStatus === "CONFIRMED";
-								const isPastTrip = new Date(booking.departureTime) < new Date();
-
 								const currentDayKey = getDayKey(booking.departureTime);
 								const previousDayKey =
 									index > 0 ? getDayKey(filteredBookings[index - 1].departureTime) : null;
@@ -130,7 +125,7 @@ const AdminViewBooking = () => {
 								<React.Fragment key={booking._id}>
 									{showDayTitle && (
 										<tr className="border-t bg-neutral-50">
-											<td colSpan={7} className="px-4 py-2 text-xs font-bold tracking-wide text-neutral-700">
+											<td colSpan={6} className="px-4 py-2 text-xs font-bold tracking-wide text-neutral-700">
 												{getDayLabel(booking.departureTime)}
 											</td>
 										</tr>
@@ -150,26 +145,6 @@ const AdminViewBooking = () => {
 										<td className="px-4 py-3">{booking.bookingStatus}</td>
 										<td className="px-4 py-3">{booking.paymentStatus}</td>
 										<td className="px-4 py-3">{formatDate(booking.createdAt)}</td>
-										<td className="px-4 py-3">
-											<div className="flex gap-2">
-												{!hideConfirmButton && (
-													<button
-														type="button"
-														className="rounded bg-green-600 px-3 py-1 text-white disabled:cursor-not-allowed disabled:opacity-50"
-														disabled={isPastTrip}
-													>
-														Confirm
-													</button>
-												)}
-												<button
-													type="button"
-													className="rounded bg-red-600 px-3 py-1 text-white disabled:cursor-not-allowed disabled:opacity-50"
-													disabled={isPastTrip}
-												>
-													Reject
-												</button>
-											</div>
-										</td>
 									</tr>
 								</React.Fragment>
 								);

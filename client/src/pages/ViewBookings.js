@@ -20,6 +20,32 @@ const ViewBookings = () => {
         fetchBookings();
     }, []);
 
+    useEffect(() => {
+        const confirmPaymentFromRedirect = async () => {
+            const params = new URLSearchParams(window.location.search);
+            const payment = params.get('payment');
+            const sessionId = params.get('session_id');
+            const bookingId = params.get('bookingId');
+
+            if (payment !== 'success' || !sessionId || !bookingId) {
+                return;
+            }
+
+            try {
+                await api.post(`/bookings/${bookingId}/pay/confirm`, { sessionId });
+                await fetchBookings();
+                alert('Payment verified successfully.');
+            } catch (err) {
+                console.error('Payment confirmation error:', err);
+                alert(err.response?.data?.message || 'Payment verification failed.');
+            } finally {
+                window.history.replaceState({}, '', '/viewBookings');
+            }
+        };
+
+        confirmPaymentFromRedirect();
+    }, []);
+
     const fetchBookings = async () => {
         try {
             setLoading(true);

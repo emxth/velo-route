@@ -107,6 +107,51 @@ export const cancelBooking = async (bookingId, userId) => {
 };
 
 /*
+  Confirm payment after Stripe redirect and persist payment intent details.
+  This runs after checkout, when payment_intent is available.
+*/
+export const confirmPayment = async (bookingId, userId, sessionId) => {
+  const booking = await bookingRepo.findById(bookingId);
+
+  if (!booking) {
+    throw new ApiError(404, "Booking not found");
+  }
+
+  if (booking.passenger.toString() !== userId.toString()) {
+    throw new ApiError(403, "Unauthorized");
+  }
+
+  if (!booking.stripeSessionId) {
+    throw new ApiError(400, "No payment session found for this booking");
+  }
+
+  if (booking.stripeSessionId !== sessionId) {
+    throw new ApiError(400, "Invalid payment session for this booking");
+  }
+
+  // Idempotent: if already saved from a previous call, return current state.
+  if (booking.paymentIntentId && booking.paymentStatus === "PAID") {
+    return booking;
+  }
+
+  const session = await retrieveSession(sessionId);
+
+  if (!session.payment_intent || session.payment_intent.status !== "succeeded") {
+    throw new ApiError(400, "Payment not completed yet");
+  }
+
+  booking.paymentIntentId = session.payment_intent.id;
+  booking.paymentStatus = "PAID";
+  await booking.save();
+
+  logger.info(
+    `Payment confirmed for booking ${bookingId} with PaymentIntent ${booking.paymentIntentId}`
+  );
+
+  return booking;
+};
+
+/*
   Confirm booking and mark payment as completed
 */
 export const confirmBooking = async (bookingId) => {

@@ -66,6 +66,28 @@ export const payBooking = async (req, res, next) => {
   }
 };
 
+// Passenger confirms payment after Stripe redirect
+export const confirmPayment = async (req, res, next) => {
+  try {
+    const { sessionId } = req.body;
+
+    if (!sessionId) {
+      return res.status(400).json({ message: "Session ID is required" });
+    }
+
+    const booking = await bookingService.confirmPayment(
+      req.params.id,
+      req.user._id,
+      sessionId
+    );
+
+    res.json(booking);
+  } catch (err) {
+    logger.error(`Payment confirmation failed: ${err.message}`);
+    next(err);
+  }
+};
+
 // Confirm Payment (NEW CORRECT VERSION)
 export const confirmBooking = async (req, res, next) => {
   try {
