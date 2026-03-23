@@ -20,6 +20,7 @@ import ResetPassword from "./pages/ResetPassword";
 import AddBooking from "./pages/addBooking";
 import ViewBookings from "./pages/ViewBookings";
 import UpdateBooking from "./pages/UpdateBooking";
+import AdminViewBooking from "./pages/AdminViewBooking";
 
 const Unauthorized = () => <div>Unauthorized</div>;
 
@@ -45,6 +46,7 @@ function App() {
 
             <Route element={<ProtectedRoute roles={["admin"]} />}>
               <Route path="/admin" element={<AdminPage />} />
+              <Route path="/admin/bookings" element={<AdminViewBooking />} />
             </Route>
 
             <Route element={<ProtectedRoute roles={["operator"]} />}>

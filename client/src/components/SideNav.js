@@ -32,6 +32,13 @@ const NAV_GROUPS = [
       { key: "viewBookings", label: "View Bookings", to: "/viewBookings", public: true },
     ],
   },
+  {
+    category: "Bookings Management - Admin",
+    items: [
+      // mark as public so it bypasses allowed filter
+      { key: "admin", label: "Admin View Bookings", to: "/admin/bookings" }
+      ],
+  },
 ];
 
 const SideNav = ({ allowed = [] }) => {
