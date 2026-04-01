@@ -18,12 +18,19 @@ const NAV_GROUPS = [
     items: [{ key: "analyst", label: "Analyst Area", to: "/analyst" }],
   },
   {
+    category: "Schedule & Routes",
+    items: [
+      { key: "schedules", label: "Trip Finder", to: "/schedules", public: true },
+    ]
+  },
+  {
     category: "Complaints & Feedback",
     items: [
       // mark as public so it bypasses allowed filter
       { key: "complaints", label: "View Complaints", to: "/complaints", public: true },
     ],
   },
+
 ];
 
 const SideNav = ({ allowed = [] }) => {
