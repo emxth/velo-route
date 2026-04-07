@@ -1,5 +1,4 @@
 import * as bookingService from "../services/bookingService.js";
-import { createCheckoutSession } from "../services/paymentService.js";
 import logger from "../config/logger.js";
 
 /*
@@ -54,7 +53,7 @@ export const cancelBooking = async (req, res, next) => {
 // Start Payment
 export const payBooking = async (req, res, next) => {
   try {
-    const session = await createCheckoutSession(req.params.id);
+    const session = await bookingService.startPayment(req.params.id, req.user._id);
 
     res.json({
       checkoutUrl: session.url,
@@ -115,6 +114,28 @@ export const clearBookingHistoryController = async (req, res, next) => {
     const result = await bookingService.clearBookingHistory(req.user._id);
     res.json(result);
   } catch (err) {
+    next(err);
+  }
+};
+
+export const adminRejectBooking = async (req, res, next) => {
+  try {
+    const { reason } = req.body;
+    const booking = await bookingService.adminRejectBooking(req.params.id, req.user._id, reason);
+    res.json(booking);
+  } catch (err) {
+    logger.error(`Admin booking rejection failed: ${err.message}`);
+    next(err);
+  }
+};
+
+export const adminCancelBooking = async (req, res, next) => {
+  try {
+    const { reason } = req.body;
+    const booking = await bookingService.adminCancelBooking(req.params.id, req.user._id, reason);
+    res.json(booking);
+  } catch (err) {
+    logger.error(`Admin booking cancellation failed: ${err.message}`);
     next(err);
   }
 };

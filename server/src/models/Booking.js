@@ -90,6 +90,25 @@ const bookingSchema = new mongoose.Schema(
     stripeSessionId: String,
 
     paymentIntentId: String, // REQUIRED to issue refund
+
+    cancelAction: {
+      type: String,
+      enum: ["PASSENGER_CANCEL", "ADMIN_REJECT", "ADMIN_CANCEL"],
+    },
+
+    cancelReason: String,
+
+    cancelledBy: {
+      type: String,
+      enum: ["USER", "ADMIN", "SYSTEM"],
+    },
+
+    cancelledByUser: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+
+    cancelledAt: Date,
   },
   { timestamps: true }
 );

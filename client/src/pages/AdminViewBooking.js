@@ -85,6 +85,46 @@ const AdminViewBooking = () => {
 		}
 	};
 
+	const askReason = (actionLabel) => {
+		const reason = window.prompt(`Enter reason for ${actionLabel.toLowerCase()}:`);
+		if (reason === null) return null;
+		if (!reason.trim()) {
+			setError("Reason is required.");
+			return null;
+		}
+		return reason.trim();
+	};
+
+	const handleAdminReject = async (bookingId) => {
+		const reason = askReason("Reject Booking");
+		if (!reason) return;
+
+		try {
+			setError("");
+			const { data } = await api.patch(`/bookings/${bookingId}/admin-reject`, { reason });
+			setBookings((prev) =>
+				prev.map((booking) => (booking._id === bookingId ? data : booking))
+			);
+		} catch (err) {
+			setError(err.response?.data?.message || "Failed to reject booking");
+		}
+	};
+
+	const handleAdminCancel = async (bookingId) => {
+		const reason = askReason("Cancel Booking");
+		if (!reason) return;
+
+		try {
+			setError("");
+			const { data } = await api.patch(`/bookings/${bookingId}/admin-cancel`, { reason });
+			setBookings((prev) =>
+				prev.map((booking) => (booking._id === bookingId ? data : booking))
+			);
+		} catch (err) {
+			setError(err.response?.data?.message || "Failed to cancel booking");
+		}
+	};
+
 	if (loading) {
 		return <div className="p-6">Loading bookings...</div>;
 	}
@@ -114,6 +154,7 @@ const AdminViewBooking = () => {
 						<option value="ALL">All</option>
 						<option value="PENDING">Pending</option>
 						<option value="CONFIRMED">Confirmed</option>
+						<option value="CANCELLED">Cancelled</option>
 					</select>
 				</div>
 			</div>
@@ -136,8 +177,13 @@ const AdminViewBooking = () => {
 						</thead>
 						<tbody>
 							{filteredBookings.map((booking, index) => {
-								const canConfirm =
-									booking.paymentStatus === "PAID" && booking.bookingStatus !== "CONFIRMED";
+								const hasDeparted = new Date(booking.departureTime).getTime() <= Date.now();
+								const isPending = booking.bookingStatus === "PENDING";
+								const isConfirmed = booking.bookingStatus === "CONFIRMED";
+								const canConfirm = !hasDeparted && booking.paymentStatus === "PAID" && isPending;
+								const canReject = !hasDeparted && isPending;
+								const canCancel = !hasDeparted && isConfirmed;
+								const hasAnyAction = canConfirm || canReject || canCancel;
 								const currentDayKey = getDayKey(booking.departureTime);
 								const previousDayKey =
 									index > 0 ? getDayKey(filteredBookings[index - 1].departureTime) : null;
@@ -168,14 +214,40 @@ const AdminViewBooking = () => {
 										<td className="px-4 py-3">{booking.paymentStatus}</td>
 										<td className="px-4 py-3">{formatDate(booking.createdAt)}</td>
 										<td className="px-4 py-3">
-											<button
-												type="button"
-												onClick={() => handleConfirmBooking(booking._id)}
-												disabled={!canConfirm || confirmingBookingId === booking._id}
-												className="rounded bg-green-600 px-3 py-1 text-white disabled:cursor-not-allowed disabled:opacity-50"
-											>
-												{confirmingBookingId === booking._id ? "Confirming..." : "Confirm Booking"}
-											</button>
+											{hasAnyAction ? (
+												<div className="flex flex-wrap gap-2">
+													{canConfirm && (
+														<button
+															type="button"
+															onClick={() => handleConfirmBooking(booking._id)}
+															disabled={confirmingBookingId === booking._id}
+															className="rounded bg-green-600 px-3 py-1 text-white disabled:cursor-not-allowed disabled:opacity-50"
+														>
+															{confirmingBookingId === booking._id ? "Confirming..." : "Confirm"}
+														</button>
+													)}
+													{canReject && (
+														<button
+															type="button"
+															onClick={() => handleAdminReject(booking._id)}
+															className="rounded bg-amber-600 px-3 py-1 text-white"
+														>
+															Reject
+														</button>
+													)}
+													{canCancel && (
+														<button
+															type="button"
+															onClick={() => handleAdminCancel(booking._id)}
+															className="rounded bg-red-600 px-3 py-1 text-white"
+														>
+															Cancel
+														</button>
+													)}
+												</div>
+											) : (
+												<span className="text-neutral-400">-</span>
+											)}
 										</td>
 									</tr>
 								</React.Fragment>
