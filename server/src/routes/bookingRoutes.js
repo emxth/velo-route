@@ -20,13 +20,19 @@ router.patch("/:id", protect, authorize("user"), bookingController.updateBooking
 router.patch("/:id/cancel", protect, bookingController.cancelBooking);
 
 // Start payment
-router.post("/:id/pay", protect, bookingController.payBooking);
+router.post("/:id/pay", protect, authorize("user"), bookingController.payBooking);
 
 // Passenger finalizes payment using Stripe session ID after redirect
 router.post("/:id/pay/confirm", protect, authorize("user"), bookingController.confirmPayment);
 
 // Confirm booking manually (for testing SMS)
 router.put("/:id/confirm", protect, authorize("admin"), bookingController.confirmBooking);
+
+// Admin rejects a pending booking (reason required)
+router.patch("/:id/admin-reject", protect, authorize("admin"), bookingController.adminRejectBooking);
+
+// Admin cancels a booking (reason required)
+router.patch("/:id/admin-cancel", protect, authorize("admin"), bookingController.adminCancelBooking);
 
 // Delete single booking (only if cancelled)
 router.delete("/:id", protect, authorize("user"), bookingController.deleteBookingController);
