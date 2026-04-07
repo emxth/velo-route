@@ -64,16 +64,22 @@ export const retrieveSession = async (stripeSessionId) => {
 /*
   Refund payment using Stripe PaymentIntent.
 */
-export const refundPayment = async (paymentIntentId) => {
+export const refundPayment = async (paymentIntentId, amountInCents) => {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2024-04-10" });
 
   if (!paymentIntentId) {
     throw new Error("No payment intent found for refund");
   }
 
-  const refund = await stripe.refunds.create({
+  const refundPayload = {
     payment_intent: paymentIntentId,
-  });
+  };
+
+  if (Number.isInteger(amountInCents) && amountInCents > 0) {
+    refundPayload.amount = amountInCents;
+  }
+
+  const refund = await stripe.refunds.create(refundPayload);
 
   logger.info(`Refund issued for paymentIntent ${paymentIntentId}`);
 

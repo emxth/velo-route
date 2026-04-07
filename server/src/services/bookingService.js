@@ -1,7 +1,7 @@
 import * as bookingRepo from "../repositories/bookingRepository.js";
 import logger from "../config/logger.js";
 import { sendSMS } from "../services/notificationService.js";
-import { refundPayment, retrieveSession  } from "./paymentService.js";
+import { createCheckoutSession, refundPayment, retrieveSession } from "./paymentService.js";
 import { ApiError } from "../utils/apiError.js";
 
 /*
@@ -79,6 +79,39 @@ export const getMyBookings = (userId) =>
 export const getAllBookings = () =>
   bookingRepo.findAll();
 
+const TWENTY_FOUR_HOURS_IN_MS = 24 * 60 * 60 * 1000;
+
+const markCancelled = (booking, actionType, reason, actorRole, actorUserId) => {
+  booking.bookingStatus = "CANCELLED";
+  booking.cancelAction = actionType;
+  booking.cancelReason = reason;
+  booking.cancelledBy = actorRole;
+  booking.cancelledByUser = actorUserId;
+  booking.cancelledAt = new Date();
+};
+
+export const startPayment = async (bookingId, userId) => {
+  const booking = await bookingRepo.findById(bookingId);
+
+  if (!booking) {
+    throw new ApiError(404, "Booking not found");
+  }
+
+  if (booking.passenger.toString() !== userId.toString()) {
+    throw new ApiError(403, "Unauthorized");
+  }
+
+  if (booking.bookingStatus !== "PENDING") {
+    throw new ApiError(400, "Only pending bookings can be paid");
+  }
+
+  if (booking.paymentStatus === "PAID") {
+    throw new ApiError(400, "Booking is already paid");
+  }
+
+  return createCheckoutSession(bookingId);
+};
+
 /*
   Cancel booking.
   If payment already completed trigger refund.
@@ -94,12 +127,44 @@ export const cancelBooking = async (bookingId, userId) => {
     throw new ApiError(403, "Unauthorized");
   }
 
-  if (booking.paymentStatus === "PAID") {
-    await refundPayment(booking.paymentIntentId);
-    booking.paymentStatus = "REFUNDED";
+  if (booking.bookingStatus === "CANCELLED") {
+    return booking;
   }
 
-  booking.bookingStatus = "CANCELLED";
+  const departureTimeMs = new Date(booking.departureTime).getTime();
+  if (Number.isNaN(departureTimeMs)) {
+    throw new ApiError(400, "Invalid departure time on booking");
+  }
+
+  const nowMs = Date.now();
+  const timeUntilDepartureMs = departureTimeMs - nowMs;
+
+  // Refund policy:
+  // >24h before departure: 100%
+  // <=24h before departure: 50%
+  // no-show (after departure): 0%
+  let refundRate = 0;
+  if (timeUntilDepartureMs > 0) {
+    refundRate = timeUntilDepartureMs > TWENTY_FOUR_HOURS_IN_MS ? 1 : 0.5;
+  }
+
+  if (booking.paymentStatus === "PAID") {
+    if (refundRate > 0) {
+      const refundAmountInCents = Math.round(booking.amount * 100 * refundRate);
+      await refundPayment(booking.paymentIntentId, refundAmountInCents);
+      booking.paymentStatus = "REFUNDED";
+    } else {
+      logger.info(`No-show cancellation, no refund for booking ${booking._id}`);
+    }
+  }
+
+  markCancelled(
+    booking,
+    "PASSENGER_CANCEL",
+    "Passenger cancelled booking",
+    "USER",
+    userId
+  );
   await booking.save();
 
   logger.info(`Booking cancelled: ${booking._id} by user ${userId}`);
@@ -158,6 +223,19 @@ export const confirmBooking = async (bookingId) => {
   const booking = await bookingRepo.findById(bookingId);
 
   if (!booking) throw new ApiError(404, "Booking not found");
+
+  const departureTimeMs = new Date(booking.departureTime).getTime();
+  if (Number.isNaN(departureTimeMs)) {
+    throw new ApiError(400, "Invalid departure time on booking");
+  }
+
+  if (departureTimeMs <= Date.now()) {
+    throw new ApiError(400, "Admin actions are not allowed for completed trips");
+  }
+
+  if (booking.bookingStatus === "CANCELLED") {
+    throw new ApiError(400, "Cancelled bookings cannot be confirmed");
+  }
 
   //Added for Testing Stripe
   if (process.env.NODE_ENV === "test") {
@@ -269,12 +347,9 @@ export const deleteBooking = async (bookingId, userId) => {
     throw new ApiError(403, "Unauthorized");
   }
 
-  // if (booking.bookingStatus !== "CANCELLED") {
-  //   throw new ApiError(
-  //     400,
-  //     "Cannot delete a confirmed booking. Cancel it first."
-  //   );
-  // }
+  if (booking.bookingStatus !== "CANCELLED") {
+    throw new ApiError(400, "Only cancelled bookings can be deleted");
+  }
 
   await bookingRepo.deleteById(bookingId);
 
@@ -287,4 +362,78 @@ export const deleteBooking = async (bookingId, userId) => {
 export const clearBookingHistory = async (userId) => {
   await bookingRepo.deleteManyByPassenger(userId);
   return { message: "Cancelled booking history cleared" };
+};
+
+export const adminRejectBooking = async (bookingId, adminUserId, reason) => {
+  const booking = await bookingRepo.findById(bookingId);
+
+  if (!booking) {
+    throw new ApiError(404, "Booking not found");
+  }
+
+  if (!reason || !reason.trim()) {
+    throw new ApiError(400, "Reason is required for admin rejection");
+  }
+
+  const departureTimeMs = new Date(booking.departureTime).getTime();
+  if (Number.isNaN(departureTimeMs)) {
+    throw new ApiError(400, "Invalid departure time on booking");
+  }
+
+  if (departureTimeMs <= Date.now()) {
+    throw new ApiError(400, "Admin actions are not allowed for completed trips");
+  }
+
+  if (booking.bookingStatus !== "PENDING") {
+    throw new ApiError(400, "Only pending bookings can be rejected");
+  }
+
+  if (booking.paymentStatus === "PAID") {
+    const refundAmountInCents = Math.round(booking.amount * 100);
+    await refundPayment(booking.paymentIntentId, refundAmountInCents);
+    booking.paymentStatus = "REFUNDED";
+  }
+
+  markCancelled(booking, "ADMIN_REJECT", reason.trim(), "ADMIN", adminUserId);
+  await booking.save();
+
+  logger.info(`Booking rejected by admin: ${booking._id} by user ${adminUserId}`);
+  return booking;
+};
+
+export const adminCancelBooking = async (bookingId, adminUserId, reason) => {
+  const booking = await bookingRepo.findById(bookingId);
+
+  if (!booking) {
+    throw new ApiError(404, "Booking not found");
+  }
+
+  if (!reason || !reason.trim()) {
+    throw new ApiError(400, "Reason is required for admin cancellation");
+  }
+
+  const departureTimeMs = new Date(booking.departureTime).getTime();
+  if (Number.isNaN(departureTimeMs)) {
+    throw new ApiError(400, "Invalid departure time on booking");
+  }
+
+  if (departureTimeMs <= Date.now()) {
+    throw new ApiError(400, "Admin actions are not allowed for completed trips");
+  }
+
+  if (booking.bookingStatus === "CANCELLED") {
+    return booking;
+  }
+
+  if (booking.paymentStatus === "PAID") {
+    const refundAmountInCents = Math.round(booking.amount * 100);
+    await refundPayment(booking.paymentIntentId, refundAmountInCents);
+    booking.paymentStatus = "REFUNDED";
+  }
+
+  markCancelled(booking, "ADMIN_CANCEL", reason.trim(), "ADMIN", adminUserId);
+  await booking.save();
+
+  logger.info(`Booking cancelled by admin: ${booking._id} by user ${adminUserId}`);
+  return booking;
 };
