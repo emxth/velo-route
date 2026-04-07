@@ -12,6 +12,8 @@ const ViewBookings = () => {
     const [error, setError] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(null);
     const [paymentLoading, setPaymentLoading] = useState(null);
+    const [cancelPaymentLoading, setCancelPaymentLoading] = useState(null);
+    const [cancelConfirmBooking, setCancelConfirmBooking] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
 
@@ -148,6 +150,42 @@ const ViewBookings = () => {
             console.error('Payment error:', err);
             alert(err.response?.data?.message || 'Failed to process payment. Please try again.');
             setPaymentLoading(null);
+        }
+    };
+
+    // Handle payment cancellation/refund for paid pending bookings
+    const handleCancelPayment = (booking) => {
+        setCancelConfirmBooking(booking);
+    };
+
+    const confirmCancelPayment = async () => {
+        if (!cancelConfirmBooking) {
+            return;
+        }
+
+        const bookingId = cancelConfirmBooking._id;
+
+        try {
+            setCancelPaymentLoading(bookingId);
+            const response = await api.patch(`/bookings/${bookingId}/cancel`);
+
+            setBookings(prevBookings =>
+                prevBookings.map(booking =>
+                    booking._id === bookingId ? response.data : booking
+                )
+            );
+
+            if (response.data.paymentStatus === 'REFUNDED') {
+                alert('Booking cancelled. Refund has been initiated based on the policy.');
+            } else {
+                alert('Booking cancelled. No refund applies for this cancellation.');
+            }
+        } catch (err) {
+            console.error('Error cancelling payment:', err);
+            alert(err.response?.data?.message || 'Failed to cancel payment');
+        } finally {
+            setCancelPaymentLoading(null);
+            setCancelConfirmBooking(null);
         }
     };
 
@@ -347,8 +385,15 @@ const ViewBookings = () => {
 
                                 {/* Actions */}
                                 <div className="flex flex-wrap gap-3 justify-end">
+                                    {(() => {
+                                        const isPending = booking.bookingStatus === 'PENDING';
+                                        const isCancelled = booking.bookingStatus === 'CANCELLED';
+                                        const isPaid = booking.paymentStatus === 'PAID';
+
+                                        return (
+                                            <>
                                     {/* Update Button - Only if PENDING */}
-                                    {booking.bookingStatus === 'PENDING' && (
+                                    {isPending && (
                                         <button
                                             onClick={() => handleUpdateBooking(booking._id)}
                                             className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition font-medium"
@@ -370,8 +415,20 @@ const ViewBookings = () => {
                                         </button>
                                     )}
 
-                                    {/* Delete Button - If PENDING or CANCELLED */}
-                                    {(booking.bookingStatus === 'PENDING' || booking.bookingStatus === 'CANCELLED') && (
+                                    {/* Cancel Booking Button - If booking is active and PAID */}
+                                    {!isCancelled && isPaid && (
+                                        <button
+                                            onClick={() => handleCancelPayment(booking)}
+                                            disabled={cancelPaymentLoading === booking._id}
+                                            className="flex items-center gap-2 px-4 py-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <CreditCard size={16} />
+                                            {cancelPaymentLoading === booking._id ? 'Cancelling...' : 'Cancel Booking'}
+                                        </button>
+                                    )}
+
+                                    {/* Delete Button - If CANCELLED or PENDING + not PAID */}
+                                    {(isCancelled || (isPending && !isPaid)) && (
                                         <button
                                             onClick={() => handleDeleteBooking(booking._id)}
                                             disabled={deleteLoading === booking._id}
@@ -381,6 +438,9 @@ const ViewBookings = () => {
                                             {deleteLoading === booking._id ? 'Deleting...' : 'Delete'}
                                         </button>
                                     )}
+                                            </>
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         </div>
@@ -428,6 +488,49 @@ const ViewBookings = () => {
                             </div>
                         )}
                     </>
+                )}
+
+                {cancelConfirmBooking && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                        <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl border border-gray-200">
+                            <div className="flex items-start gap-3 mb-4">
+                                <div className="rounded-full bg-amber-100 p-2">
+                                    <AlertCircle className="text-amber-600" size={20} />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-gray-900">Confirm Booking Cancellation</h2>
+                                    <p className="text-sm text-gray-600 mt-1">
+                                        You are about to cancel this booking from {cancelConfirmBooking.fromLocation} to {cancelConfirmBooking.toLocation}.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 mb-5">
+                                <p className="text-sm font-semibold text-amber-900 mb-2">Refund Policy</p>
+                                <ul className="text-sm text-amber-800 space-y-1 list-disc pl-5">
+                                    <li>More than 24 hours before trip: 100% refund</li>
+                                    <li>Within 24 hours before trip: 50% refund</li>
+                                    <li>No-show: 0% refund</li>
+                                </ul>
+                            </div>
+
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    onClick={() => setCancelConfirmBooking(null)}
+                                    className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition font-medium"
+                                >
+                                    Keep Booking
+                                </button>
+                                <button
+                                    onClick={confirmCancelPayment}
+                                    disabled={cancelPaymentLoading === cancelConfirmBooking._id}
+                                    className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {cancelPaymentLoading === cancelConfirmBooking._id ? 'Cancelling...' : 'Confirm Cancellation'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </div>
         </div>
