@@ -389,6 +389,10 @@ const ViewBookings = () => {
                                         const isPending = booking.bookingStatus === 'PENDING';
                                         const isCancelled = booking.bookingStatus === 'CANCELLED';
                                         const isPaid = booking.paymentStatus === 'PAID';
+                                        const departureMs = new Date(booking.departureTime).getTime();
+                                        const isDepartureTimeValid = !Number.isNaN(departureMs);
+                                        const hasDeparturePassed = isDepartureTimeValid && departureMs <= Date.now();
+                                        const canCancelPaidBooking = !isCancelled && isPaid && !hasDeparturePassed;
 
                                         return (
                                             <>
@@ -415,8 +419,8 @@ const ViewBookings = () => {
                                         </button>
                                     )}
 
-                                    {/* Cancel Booking Button - If booking is active and PAID */}
-                                    {!isCancelled && isPaid && (
+                                    {/* Cancel Booking Button - Only before departure for paid active bookings */}
+                                    {canCancelPaidBooking && (
                                         <button
                                             onClick={() => handleCancelPayment(booking)}
                                             disabled={cancelPaymentLoading === booking._id}
