@@ -86,15 +86,26 @@ describe("Booking Service", () => {
       const mockBooking = { _id: "booking123", seatNumbers: ["A1"], passenger: "user123" };
       createBookingMock.mockResolvedValue(mockBooking);
       findConflictingSeatsMock.mockResolvedValue([]);
+      const validDepartureTime = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
       const result = await createBooking("user123", {
         seatNumbers: ["A1"],
         phoneNumber: "+94123456789",
         transportType: "BUS",
-        tripId: "trip123"
+        tripId: "trip123",
+        fromLocation: "Colombo",
+        toLocation: "Kandy",
+        departureTime: validDepartureTime,
       });
 
-      expect(findConflictingSeatsMock).toHaveBeenCalledWith("trip123", ["A1"]);
+      expect(findConflictingSeatsMock).toHaveBeenCalledWith({
+        tripId: "trip123",
+        transportType: "BUS",
+        fromLocation: "Colombo",
+        toLocation: "Kandy",
+        departureTime: validDepartureTime,
+        seatNumbers: ["A1"],
+      });
       expect(createBookingMock).toHaveBeenCalled();
       expect(result).toEqual(mockBooking);
     });
