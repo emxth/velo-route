@@ -1,5 +1,6 @@
 config:
   target: "http://localhost:5000"
+  processor: "./booking-flow-processor.js"
   phases:
     - duration: 10
       arrivalRate: 1
@@ -34,6 +35,7 @@ scenarios:
       # CREATE BOOKING
       - post:
           url: "/api/bookings/"
+          beforeRequest: "setValidDepartureTime"
           headers:
             Authorization: "Bearer {{ authToken }}"
           json:
@@ -45,7 +47,7 @@ scenarios:
             coachNumber: "{{ coachNumber }}" 
             fromLocation: "{{ fromLocation }}"
             toLocation: "{{ toLocation }}"
-            departureTime: "2026-03-01T15:00:00Z"
+            departureTime: "{{ departureTime }}"
           capture:
             - json: "$._id"
               as: "bookingId"
