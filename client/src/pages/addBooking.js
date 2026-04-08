@@ -188,6 +188,31 @@ const AddBooking = () => {
     return seatCount * FARE_PER_SEAT;
   };
 
+  const validateDepartureTime = (value) => {
+    if (!value?.trim()) {
+      return 'Departure time is required';
+    }
+
+    const selectedTime = new Date(value);
+    if (Number.isNaN(selectedTime.getTime())) {
+      return 'Enter a valid departure time';
+    }
+
+    const now = new Date();
+    const maxAllowedDate = new Date(now);
+    maxAllowedDate.setMonth(maxAllowedDate.getMonth() + 1);
+
+    if (selectedTime <= now) {
+      return 'Departure time must be in the future';
+    }
+
+    if (selectedTime > maxAllowedDate) {
+      return 'Departure time must be within one month from today';
+    }
+
+    return '';
+  };
+
   // Validation Rules
   const validateForm = () => {
     const newErrors = {};
@@ -233,15 +258,9 @@ const AddBooking = () => {
     }
 
     // Departure Time Validation
-    if (!formData.departureTime.trim()) {
-      newErrors.departureTime = 'Departure time is required';
-    } else {
-      // Check if departure time is in the future
-      const selectedTime = new Date(formData.departureTime);
-      const now = new Date();
-      if (selectedTime <= now) {
-        newErrors.departureTime = 'Departure time must be in the future';
-      }
+    const departureTimeError = validateDepartureTime(formData.departureTime);
+    if (departureTimeError) {
+      newErrors.departureTime = departureTimeError;
     }
 
     setErrors(newErrors);
@@ -288,6 +307,12 @@ const AddBooking = () => {
       setErrors(prev => ({
         ...prev,
         phoneNumber: phoneError,
+      }));
+    } else if (name === 'departureTime') {
+      const departureTimeError = validateDepartureTime(value);
+      setErrors(prev => ({
+        ...prev,
+        departureTime: departureTimeError,
       }));
     } else if (errors[name]) {
       // Clear error for other fields when user starts typing

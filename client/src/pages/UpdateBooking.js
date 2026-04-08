@@ -229,6 +229,31 @@ const UpdateBooking = () => {
 
     const calculateAmount = (seatCount) => seatCount * FARE_PER_SEAT;
 
+    const validateDepartureTime = (value) => {
+        if (!value) {
+            return 'Departure time is required';
+        }
+
+        const selectedTime = new Date(value);
+        if (Number.isNaN(selectedTime.getTime())) {
+            return 'Enter a valid departure time';
+        }
+
+        const now = new Date();
+        const maxAllowedDate = new Date(now);
+        maxAllowedDate.setMonth(maxAllowedDate.getMonth() + 1);
+
+        if (selectedTime <= now) {
+            return 'Departure time must be in the future';
+        }
+
+        if (selectedTime > maxAllowedDate) {
+            return 'Departure time must be within one month from today';
+        }
+
+        return '';
+    };
+
     // Validate phone number format: +94 followed by exactly 9 digits
     const validatePhoneNumber = (phone) => {
         if (!phone) return '';
@@ -271,14 +296,9 @@ const UpdateBooking = () => {
         if (formData.seatNumbers.length === 0) {
             newErrors.seatNumbers = 'Please select at least one seat';
         }
-        if (!formData.departureTime) {
-            newErrors.departureTime = 'Departure time is required';
-        } else {
-            const selectedTime = new Date(formData.departureTime);
-            const now = new Date();
-            if (selectedTime <= now) {
-                newErrors.departureTime = 'Departure time must be in the future';
-            }
+        const departureTimeError = validateDepartureTime(formData.departureTime);
+        if (departureTimeError) {
+            newErrors.departureTime = departureTimeError;
         }
         setErrors(newErrors);
         if (Object.keys(newErrors).length > 0) {
@@ -295,6 +315,9 @@ const UpdateBooking = () => {
         if (name === 'phoneNumber') {
             const phoneError = validatePhoneNumber(value);
             setErrors((prev) => ({ ...prev, phoneNumber: phoneError }));
+        } else if (name === 'departureTime') {
+            const departureTimeError = validateDepartureTime(value);
+            setErrors((prev) => ({ ...prev, departureTime: departureTimeError }));
         } else if (errors[name]) {
             setErrors((prev) => ({ ...prev, [name]: '' }));
         }

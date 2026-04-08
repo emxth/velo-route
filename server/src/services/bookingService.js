@@ -9,6 +9,28 @@ import { ApiError } from "../utils/apiError.js";
   Handles validation, transport rules, and repository interaction
 */
 
+const validateDepartureTimeWindow = (value) => {
+  const departureDate = new Date(value);
+
+  if (Number.isNaN(departureDate.getTime())) {
+    throw new ApiError(400, "Invalid departure time");
+  }
+
+  const now = new Date();
+  const maxAllowedDate = new Date(now);
+  maxAllowedDate.setMonth(maxAllowedDate.getMonth() + 1);
+
+  if (departureDate <= now) {
+    throw new ApiError(400, "Departure time must be in the future");
+  }
+
+  if (departureDate > maxAllowedDate) {
+    throw new ApiError(400, "Departure time must be within one month from today");
+  }
+
+  return departureDate;
+};
+
 export const createBooking = async (userId, data) => {
   const { transportType, seatNumbers, coachNumber, phoneNumber, tripId, fromLocation, toLocation, departureTime } = data;
 
@@ -43,6 +65,8 @@ export const createBooking = async (userId, data) => {
     throw new ApiError(400, "From location, to location and departure time are required");
   }
 
+  const validatedDepartureDate = validateDepartureTimeWindow(departureTime);
+
   const existingBookings = await bookingRepo.findConflictingSeats({
     tripId,
     transportType,
@@ -71,7 +95,7 @@ export const createBooking = async (userId, data) => {
     phoneNumber,
     fromLocation: data.fromLocation,
     toLocation: data.toLocation,
-    departureTime: data.departureTime,
+    departureTime: validatedDepartureDate,
     amount: totalAmount,
     bookingStatus: "PENDING",
     paymentStatus: "UNPAID",
@@ -326,7 +350,11 @@ export const updateBooking = async (bookingId, userId, data) => {
 
   const { seatNumbers, phoneNumber, departureTime } = data;
 
-  const targetDepartureTime = departureTime || booking.departureTime;
+  const validatedDepartureDate = departureTime
+    ? validateDepartureTimeWindow(departureTime)
+    : null;
+
+  const targetDepartureTime = validatedDepartureDate || booking.departureTime;
 
   // ---------------- Phone Update ----------------
   if (phoneNumber) {
@@ -361,8 +389,8 @@ export const updateBooking = async (bookingId, userId, data) => {
   }
 
   // ---------------- Departure Time ----------------
-  if (departureTime) {
-    booking.departureTime = new Date(departureTime);
+  if (validatedDepartureDate) {
+    booking.departureTime = validatedDepartureDate;
   }
 
   await booking.save();
