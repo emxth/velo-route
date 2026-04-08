@@ -10,7 +10,7 @@ import { ApiError } from "../utils/apiError.js";
 */
 
 export const createBooking = async (userId, data) => {
-  const { transportType, seatNumbers, coachNumber, phoneNumber, tripId } = data;
+  const { transportType, seatNumbers, coachNumber, phoneNumber, tripId, fromLocation, toLocation, departureTime } = data;
 
   //Validations
   if (!phoneNumber) {
@@ -39,10 +39,18 @@ export const createBooking = async (userId, data) => {
   }
 
   //Seat Conflict Check
-  const existingBookings = await bookingRepo.findConflictingSeats(
+  if (!fromLocation || !toLocation || !departureTime) {
+    throw new ApiError(400, "From location, to location and departure time are required");
+  }
+
+  const existingBookings = await bookingRepo.findConflictingSeats({
     tripId,
-    seatNumbers
-  );
+    transportType,
+    fromLocation,
+    toLocation,
+    departureTime,
+    seatNumbers,
+  });
 
   if (existingBookings.length > 0) {
     throw new ApiError(400, "One or more selected seats already booked");
@@ -78,6 +86,33 @@ export const getMyBookings = (userId) =>
 
 export const getAllBookings = () =>
   bookingRepo.findAll();
+
+export const getOccupiedSeats = async ({ tripId, transportType, fromLocation, toLocation, departureTime, excludeBookingId }) => {
+  if (!tripId || !transportType || !fromLocation || !toLocation || !departureTime) {
+    throw new ApiError(400, "tripId, transportType, fromLocation, toLocation and departureTime are required");
+  }
+
+  const bookings = await bookingRepo.findOccupiedSeats({
+    tripId,
+    transportType,
+    fromLocation,
+    toLocation,
+    departureTime,
+    excludeBookingId,
+  });
+
+  const occupiedSeatSet = new Set();
+  for (const booking of bookings) {
+    for (const seat of booking.seatNumbers || []) {
+      const seatNumber = Number(seat);
+      if (!Number.isNaN(seatNumber)) {
+        occupiedSeatSet.add(seatNumber);
+      }
+    }
+  }
+
+  return Array.from(occupiedSeatSet).sort((a, b) => a - b);
+};
 
 const TWENTY_FOUR_HOURS_IN_MS = 24 * 60 * 60 * 1000;
 
@@ -291,6 +326,8 @@ export const updateBooking = async (bookingId, userId, data) => {
 
   const { seatNumbers, phoneNumber, departureTime } = data;
 
+  const targetDepartureTime = departureTime || booking.departureTime;
+
   // ---------------- Phone Update ----------------
   if (phoneNumber) {
     const phoneRegex = /^\+94\d{9}$/;
@@ -302,16 +339,17 @@ export const updateBooking = async (bookingId, userId, data) => {
 
   // ---------------- Seat Update ----------------
   if (seatNumbers && Array.isArray(seatNumbers) && seatNumbers.length > 0) {
-    const existingBookings = await bookingRepo.findConflictingSeats(
-      booking.tripId,
-      seatNumbers
-    );
+    const existingBookings = await bookingRepo.findConflictingSeats({
+      tripId: booking.tripId,
+      transportType: booking.transportType,
+      fromLocation: booking.fromLocation,
+      toLocation: booking.toLocation,
+      departureTime: targetDepartureTime,
+      seatNumbers,
+      excludeBookingId: bookingId,
+    });
 
-    const conflictingSeats = existingBookings.filter(
-      (b) => b._id.toString() !== bookingId
-    );
-
-    if (conflictingSeats.length > 0) {
+    if (existingBookings.length > 0) {
       throw new ApiError(400, "One or more selected seats already booked");
     }
 

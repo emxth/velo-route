@@ -23,6 +23,23 @@ export const getMyBookings = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+export const getOccupiedSeats = async (req, res, next) => {
+  try {
+    const occupiedSeats = await bookingService.getOccupiedSeats({
+      tripId: req.query.tripId,
+      transportType: req.query.transportType,
+      fromLocation: req.query.fromLocation,
+      toLocation: req.query.toLocation,
+      departureTime: req.query.departureTime,
+      excludeBookingId: req.query.excludeBookingId,
+    });
+
+    res.json({ occupiedSeats });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const getAllBookings = async (_req, res, next) => {
   try {
     const bookings = await bookingService.getAllBookings();

@@ -10,6 +10,9 @@ router.post("/", protect, authorize("user"), bookingController.createBooking);
 // Passenger views own bookings
 router.get("/me", protect, bookingController.getMyBookings);
 
+// Seat occupancy for a specific transport/trip/route
+router.get("/occupied-seats", protect, bookingController.getOccupiedSeats);
+
 // Admin views all bookings
 router.get("/", protect, authorize("admin"), bookingController.getAllBookings);
 
