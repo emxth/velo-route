@@ -229,6 +229,32 @@ const UpdateBooking = () => {
 
     const calculateAmount = (seatCount) => seatCount * FARE_PER_SEAT;
 
+    // Validate phone number format: +94 followed by exactly 9 digits
+    const validatePhoneNumber = (phone) => {
+        if (!phone) return '';
+        
+        // Check format: +94 + exactly 9 digits
+        const isValid = /^\+94\d{9}$/.test(phone);
+        
+        if (!isValid) {
+            // Check if user started with +94
+            if (phone.startsWith('+94')) {
+                const digitsOnly = phone.slice(3).replace(/\D/g, '');
+                if (digitsOnly.length < 9) {
+                    return `Add ${9 - digitsOnly.length} more digit(s)`;
+                } else if (digitsOnly.length > 9) {
+                    return 'Remove extra digits (must have exactly 9 digits after +94)';
+                } else {
+                    return 'Phone number can only contain digits after +94';
+                }
+            } else if (phone.length > 0) {
+                return 'Phone number must start with +94';
+            }
+        }
+        
+        return '';
+    };
+
     const validate = () => {
         const newErrors = {};
         if (!isPending) {
@@ -236,8 +262,11 @@ const UpdateBooking = () => {
         }
         if (!formData.phoneNumber.trim()) {
             newErrors.phoneNumber = 'Phone number is required';
-        } else if (!/^\+94\d{9}$/.test(formData.phoneNumber)) {
-            newErrors.phoneNumber = 'Enter a valid phone number in format: +94XXXXXXXXX';
+        } else {
+            const phoneError = validatePhoneNumber(formData.phoneNumber);
+            if (phoneError) {
+                newErrors.phoneNumber = phoneError;
+            }
         }
         if (formData.seatNumbers.length === 0) {
             newErrors.seatNumbers = 'Please select at least one seat';
@@ -261,7 +290,12 @@ const UpdateBooking = () => {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
-        if (errors[name]) {
+        
+        // Real-time validation for phone number
+        if (name === 'phoneNumber') {
+            const phoneError = validatePhoneNumber(value);
+            setErrors((prev) => ({ ...prev, phoneNumber: phoneError }));
+        } else if (errors[name]) {
             setErrors((prev) => ({ ...prev, [name]: '' }));
         }
     };

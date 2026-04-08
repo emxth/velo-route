@@ -195,8 +195,11 @@ const AddBooking = () => {
     // Phone Number Validation (Sri Lanka format: +94XXXXXXXXX)
     if (!formData.phoneNumber.trim()) {
       newErrors.phoneNumber = 'Phone number is required';
-    } else if (!/^\+94\d{9}$/.test(formData.phoneNumber)) {
-      newErrors.phoneNumber = 'Enter a valid phone number in format: +94XXXXXXXXX';
+    } else {
+      const phoneError = validatePhoneNumber(formData.phoneNumber);
+      if (phoneError) {
+        newErrors.phoneNumber = phoneError;
+      }
     }
 
     // Trip ID Validation
@@ -245,6 +248,32 @@ const AddBooking = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Validate phone number format: +94 followed by exactly 9 digits
+  const validatePhoneNumber = (phone) => {
+    if (!phone) return '';
+    
+    // Check format: +94 + exactly 9 digits
+    const isValid = /^\+94\d{9}$/.test(phone);
+    
+    if (!isValid) {
+      // Check if user started with +94
+      if (phone.startsWith('+94')) {
+        const digitsOnly = phone.slice(3).replace(/\D/g, '');
+        if (digitsOnly.length < 9) {
+          return `Add ${9 - digitsOnly.length} more digit(s)`;
+        } else if (digitsOnly.length > 9) {
+          return 'Remove extra digits (must have exactly 9 digits after +94)';
+        } else {
+          return 'Phone number can only contain digits after +94';
+        }
+      } else if (phone.length > 0) {
+        return 'Phone number must start with +94';
+      }
+    }
+    
+    return '';
+  };
+
   // Handle Input Change
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -252,8 +281,16 @@ const AddBooking = () => {
       ...prev,
       [name]: value,
     }));
-    // Clear error for this field when user starts typing
-    if (errors[name]) {
+    
+    // Real-time validation for phone number
+    if (name === 'phoneNumber') {
+      const phoneError = validatePhoneNumber(value);
+      setErrors(prev => ({
+        ...prev,
+        phoneNumber: phoneError,
+      }));
+    } else if (errors[name]) {
+      // Clear error for other fields when user starts typing
       setErrors(prev => ({
         ...prev,
         [name]: '',
