@@ -1,11 +1,20 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown, X, AlertCircle, CheckCircle } from 'lucide-react';
 import api from '../api/axios';
 
 // Seat Selection Modal Component
-const SeatSelectionModal = ({ isOpen, onClose, onSelectSeats, transportType, selectedSeats }) => {
+const SeatSelectionModal = ({ isOpen, onClose, onSelectSeats, transportType, selectedSeats, occupiedSeats = [] }) => {
   const [localSelectedSeats, setLocalSelectedSeats] = useState(selectedSeats || []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const nextSelected = (selectedSeats || []).filter((seat) => !occupiedSeats.includes(seat));
+    setLocalSelectedSeats(nextSelected);
+  }, [isOpen, selectedSeats, occupiedSeats]);
   
   // Define seat layout based on transport type
   const seatLayout = transportType === 'TRAIN' 
@@ -13,8 +22,6 @@ const SeatSelectionModal = ({ isOpen, onClose, onSelectSeats, transportType, sel
     : { rows: 8, cols: 4 }; // 32 seats for bus (reduced from 48)
 
   const totalSeats = seatLayout.rows * seatLayout.cols;
-  const occupiedSeats = [5, 10, 15, 22, 28]; // Sample occupied seats
-
   // Handle seat click
   const toggleSeat = (seatNumber) => {
     setLocalSelectedSeats(prev => 
@@ -173,6 +180,8 @@ const AddBooking = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [occupiedSeats, setOccupiedSeats] = useState([]);
+  const [loadingOccupiedSeats, setLoadingOccupiedSeats] = useState(false);
 
   // Calculate amount based on seat count
   const calculateAmount = (seatCount) => {
@@ -269,6 +278,47 @@ const AddBooking = () => {
       }));
     }
   };
+
+  useEffect(() => {
+    const hasRequiredTripDetails =
+      formData.tripId.trim() &&
+      formData.fromLocation.trim() &&
+      formData.toLocation.trim() &&
+      formData.departureTime;
+
+    if (!hasRequiredTripDetails) {
+      setOccupiedSeats([]);
+      return;
+    }
+
+    const fetchOccupiedSeats = async () => {
+      try {
+        setLoadingOccupiedSeats(true);
+        const response = await api.get('/bookings/occupied-seats', {
+          params: {
+            tripId: formData.tripId.trim(),
+            transportType: formData.transportType,
+            fromLocation: formData.fromLocation.trim(),
+            toLocation: formData.toLocation.trim(),
+            departureTime: formData.departureTime,
+          },
+        });
+
+        const normalized = (response.data?.occupiedSeats || [])
+          .map((seat) => Number(seat))
+          .filter((seat) => !Number.isNaN(seat));
+
+        setOccupiedSeats(normalized);
+      } catch (err) {
+        console.error('Failed to fetch occupied seats:', err);
+        setOccupiedSeats([]);
+      } finally {
+        setLoadingOccupiedSeats(false);
+      }
+    };
+
+    fetchOccupiedSeats();
+  }, [formData.tripId, formData.transportType, formData.fromLocation, formData.toLocation, formData.departureTime]);
 
   // Handle Form Submission
   const handleSubmit = async (e) => {
@@ -537,13 +587,16 @@ const AddBooking = () => {
                 <button
                   type="button"
                   onClick={() => setSeatModalOpen(true)}
+                  disabled={loadingOccupiedSeats || !formData.tripId.trim() || !formData.fromLocation.trim() || !formData.toLocation.trim() || !formData.departureTime}
                   className={`w-full px-4 py-3 border rounded-lg text-left transition ${
                     errors.seatNumbers
                       ? 'border-red-500 bg-red-50'
                       : 'border-slate-300 bg-slate-50'
-                  } hover:bg-cyan-50`}
+                  } hover:bg-cyan-50 disabled:opacity-60 disabled:cursor-not-allowed`}
                 >
-                  {formData.seatNumbers.length > 0 ? (
+                  {loadingOccupiedSeats ? (
+                    <p className="text-gray-500">Loading seat availability...</p>
+                  ) : formData.seatNumbers.length > 0 ? (
                     <div>
                       <p className="font-medium text-gray-800">
                         {formData.seatNumbers.length} seat(s) selected
@@ -553,7 +606,11 @@ const AddBooking = () => {
                       </p>
                     </div>
                   ) : (
-                    <p className="text-gray-500">Click to select seats</p>
+                    <p className="text-gray-500">
+                      {formData.tripId.trim() && formData.fromLocation.trim() && formData.toLocation.trim() && formData.departureTime
+                        ? 'Click to select seats'
+                        : 'Enter Trip ID, From, To and Departure Time first'}
+                    </p>
                   )}
                 </button>
                 {errors.seatNumbers && (
@@ -652,6 +709,7 @@ const AddBooking = () => {
         onSelectSeats={handleSelectSeats}
         transportType={formData.transportType}
         selectedSeats={formData.seatNumbers}
+        occupiedSeats={occupiedSeats}
       />
     </div>
   );

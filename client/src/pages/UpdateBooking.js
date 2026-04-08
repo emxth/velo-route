@@ -4,22 +4,21 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { X } from 'lucide-react';
 import api from '../api/axios';
 
-const SeatSelectionModal = ({ isOpen, onClose, onSelectSeats, transportType, selectedSeats }) => {
+const SeatSelectionModal = ({ isOpen, onClose, onSelectSeats, transportType, selectedSeats, occupiedSeats = [] }) => {
     const [localSelectedSeats, setLocalSelectedSeats] = useState(selectedSeats || []);
 
     useEffect(() => {
         if (isOpen) {
-            setLocalSelectedSeats(selectedSeats || []);
+            const nextSelected = (selectedSeats || []).filter((seat) => !occupiedSeats.includes(seat));
+            setLocalSelectedSeats(nextSelected);
         }
-    }, [isOpen, selectedSeats]);
+    }, [isOpen, selectedSeats, occupiedSeats]);
 
     const seatLayout = transportType === 'TRAIN'
         ? { rows: 6, cols: 5 }
         : { rows: 8, cols: 4 };
 
     const totalSeats = seatLayout.rows * seatLayout.cols;
-    const occupiedSeats = [5, 10, 15, 22, 28];
-
     const toggleSeat = (seatNumber) => {
         setLocalSelectedSeats((prev) =>
             prev.includes(seatNumber)
@@ -141,6 +140,8 @@ const UpdateBooking = () => {
     const [success, setSuccess] = useState('');
     const [seatModalOpen, setSeatModalOpen] = useState(false);
     const [errors, setErrors] = useState({});
+    const [occupiedSeats, setOccupiedSeats] = useState([]);
+    const [loadingOccupiedSeats, setLoadingOccupiedSeats] = useState(false);
 
     const FARE_PER_SEAT = 500;
 
@@ -187,6 +188,42 @@ const UpdateBooking = () => {
             amount: booking.amount || 0,
         });
     }, [booking]);
+
+    useEffect(() => {
+        const fetchOccupiedSeats = async () => {
+            if (!booking || !formData.departureTime) {
+                setOccupiedSeats([]);
+                return;
+            }
+
+            try {
+                setLoadingOccupiedSeats(true);
+                const response = await api.get('/bookings/occupied-seats', {
+                    params: {
+                        tripId: booking.tripId,
+                        transportType: booking.transportType,
+                        fromLocation: booking.fromLocation,
+                        toLocation: booking.toLocation,
+                        departureTime: formData.departureTime,
+                        excludeBookingId: id,
+                    },
+                });
+
+                const normalized = (response.data?.occupiedSeats || [])
+                    .map((seat) => Number(seat))
+                    .filter((seat) => !Number.isNaN(seat));
+
+                setOccupiedSeats(normalized);
+            } catch (err) {
+                console.error('Failed to fetch occupied seats:', err);
+                setOccupiedSeats([]);
+            } finally {
+                setLoadingOccupiedSeats(false);
+            }
+        };
+
+        fetchOccupiedSeats();
+    }, [booking, id, formData.departureTime]);
 
     const isPending = booking?.bookingStatus === 'PENDING';
 
@@ -325,14 +362,16 @@ const UpdateBooking = () => {
                         <button
                             type="button"
                             onClick={() => setSeatModalOpen(true)}
-                            disabled={!isPending || saving}
+                            disabled={!isPending || saving || loadingOccupiedSeats}
                             className={`w-full px-4 py-2 border rounded-lg text-left transition ${
                                 errors.seatNumbers
                                     ? 'border-red-500 bg-red-50'
                                     : 'border-gray-300 bg-gray-50'
                                 } hover:bg-blue-50 disabled:opacity-60 disabled:cursor-not-allowed`}
                         >
-                            {formData.seatNumbers.length > 0 ? (
+                            {loadingOccupiedSeats ? (
+                                <p className="text-gray-500">Loading seat availability...</p>
+                            ) : formData.seatNumbers.length > 0 ? (
                                 <div>
                                     <p className="font-medium text-gray-800">
                                         {formData.seatNumbers.length} seat(s) selected
@@ -418,6 +457,7 @@ const UpdateBooking = () => {
                 onSelectSeats={handleSelectSeats}
                 transportType={booking?.transportType || 'BUS'}
                 selectedSeats={formData.seatNumbers.map((s) => Number(s)).filter((n) => !Number.isNaN(n))}
+                occupiedSeats={occupiedSeats}
             />
         </div>
     );
