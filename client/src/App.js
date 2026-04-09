@@ -16,6 +16,8 @@ import ComplaintsPage from "./pages/ComplaintsPage";
 import ComplaintDetailPage from "./pages/ComplaintDetailPage";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import SchedulePage from "./pages/SchedulePage";
+
 
 const Unauthorized = () => <div>Unauthorized</div>;
 
@@ -57,6 +59,7 @@ function App() {
 
             <Route path="/complaints" element={<ComplaintsPage />} />
             <Route path="/complaints/:id" element={<ComplaintDetailPage />} />
+            <Route path="/schedules" element={<SchedulePage />} />
           </Route>
         </Route>
       </Routes>
