@@ -1,6 +1,9 @@
 import { formatDate, formatTime } from "../../utils/dateFormatters";
+import { useNavigate } from "react-router-dom";
 
 const ScheduleTable = ({ schedules }) => {
+  const navigate = useNavigate();
+
   const getStatusBadgeClass = (status) => {
     const statusMap = {
       "SCHEDULED": "badge-info",
@@ -63,6 +66,23 @@ const ScheduleTable = ({ schedules }) => {
           <tbody className="bg-white divide-y divide-gray-200">
             {schedules.map((schedule) => {
               const availableSeats = schedule.vehicleID?.capacity || 0;
+              const scheduleDepartureTime = schedule.depatureTime || schedule.departureTime;
+              const tripId = schedule.tripId || schedule._id || schedule.id || "";
+
+              const handleBookNow = () => {
+                navigate("/addBooking", {
+                  state: {
+                    prefillBooking: {
+                      tripId,
+                      transportType: schedule.vehicleID?.type === "TRAIN" ? "TRAIN" : "BUS",
+                      fromLocation: schedule.routeId?.startLocation?.name || "",
+                      toLocation: schedule.routeId?.endLocation?.name || "",
+                      departureTime: scheduleDepartureTime || "",
+                      estimatedFare: Number(schedule.routeId?.estimatedFare) || 0,
+                    },
+                  },
+                });
+              };
               
               return (
                 <tr key={schedule._id || schedule.id} className="hover:bg-gray-50 transition-colors">
@@ -118,7 +138,13 @@ const ScheduleTable = ({ schedules }) => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-gray-900">
-                      <button className="bg-[#27AE60] p-2 rounded-full hover:text-slate-200">Book Now</button>
+                      <button
+                        type="button"
+                        onClick={handleBookNow}
+                        className="bg-[#27AE60] p-2 rounded-full hover:text-slate-200"
+                      >
+                        Book Now
+                      </button>
                     </div>
                   </td>
                   
