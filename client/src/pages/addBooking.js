@@ -559,6 +559,7 @@ const AddBooking = () => {
       formData.departureTime;
 
     if (!hasRequiredTripDetails) {
+      console.log('Skipping - missing required fields');
       setOccupiedSeats([]);
       return;
     }
@@ -566,15 +567,21 @@ const AddBooking = () => {
     const fetchOccupiedSeats = async () => {
       try {
         setLoadingOccupiedSeats(true);
-        const response = await api.get('/bookings/occupied-seats', {
-          params: {
-            tripId: formData.tripId.trim(),
-            transportType: formData.transportType,
-            fromLocation: formData.fromLocation.trim(),
-            toLocation: formData.toLocation.trim(),
-            departureTime: formData.departureTime,
-          },
-        });
+        
+        // Convert datetime-local format to ISO string for API
+        const departureTimeISO = formData.departureTime 
+          ? new Date(formData.departureTime).toISOString() 
+          : formData.departureTime;
+        
+        const params = {
+          tripId: formData.tripId.trim(),
+          transportType: formData.transportType,
+          fromLocation: formData.fromLocation.trim(),
+          toLocation: formData.toLocation.trim(),
+          departureTime: departureTimeISO,
+        };
+
+        const response = await api.get('/bookings/occupied-seats', { params });
 
         const normalized = (response.data?.occupiedSeats || [])
           .map((seat) => Number(seat))
@@ -582,7 +589,8 @@ const AddBooking = () => {
 
         setOccupiedSeats(normalized);
       } catch (err) {
-        console.error('Failed to fetch occupied seats:', err);
+        console.error('Failed to fetch occupied seats:', err.response?.data || err.message);
+        console.error('Full error:', err);
         setOccupiedSeats([]);
       } finally {
         setLoadingOccupiedSeats(false);

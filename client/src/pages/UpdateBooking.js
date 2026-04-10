@@ -4,21 +4,107 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { X } from 'lucide-react';
 import api from '../api/axios';
 
-const SeatSelectionModal = ({ isOpen, onClose, onSelectSeats, transportType, selectedSeats, occupiedSeats = [] }) => {
+// Convert stored Date value to a value suitable for datetime-local input
+const toDateTimeLocalValue = (value) => {
+    if (!value) {
+        return '';
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+
+    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return localDate.toISOString().slice(0, 16);
+};
+
+const SeatSelectionModal = ({ isOpen, onClose, onSelectSeats, transportType, selectedSeats, occupiedSeats = [], seatCapacity }) => {
     const [localSelectedSeats, setLocalSelectedSeats] = useState(selectedSeats || []);
+
+    const safeSeatCapacity = Number.isFinite(Number(seatCapacity)) && Number(seatCapacity) > 0
+        ? Number(seatCapacity)
+        : null;
 
     useEffect(() => {
         if (isOpen) {
-            const nextSelected = (selectedSeats || []).filter((seat) => !occupiedSeats.includes(seat));
+            const nextSelected = (selectedSeats || []).filter((seat) => {
+                if (occupiedSeats.includes(seat)) {
+                    return false;
+                }
+
+                if (safeSeatCapacity && seat > safeSeatCapacity) {
+                    return false;
+                }
+
+                return true;
+            });
             setLocalSelectedSeats(nextSelected);
         }
-    }, [isOpen, selectedSeats, occupiedSeats]);
+    }, [isOpen, selectedSeats, occupiedSeats, safeSeatCapacity]);
 
-    const seatLayout = transportType === 'TRAIN'
-        ? { rows: 6, cols: 5 }
-        : { rows: 8, cols: 4 };
+    const isBus = transportType === 'BUS';
+    const fallbackColumns = 5;
+    const totalSeats = safeSeatCapacity;
+    const seatLayout = {
+        cols: fallbackColumns,
+        rows: totalSeats ? Math.ceil(totalSeats / fallbackColumns) : 0,
+    };
 
-    const totalSeats = seatLayout.rows * seatLayout.cols;
+    const buildBusRows = (seatCount) => {
+        const rows = [];
+        if (seatCount <= 6) {
+            rows.push({
+                seats: Array.from({ length: seatCount }, (_, index) => index + 1),
+                leftCount: 0,
+                isLastRow: true,
+            });
+            return rows;
+        }
+
+        const seatsBeforeLastRow = seatCount - 6;
+        let nextSeat = 1;
+        const splitRowsLimit = 9;
+        const splitRowSeatCount = 5;
+        const rightOnlySeatCount = 3;
+        const splitRowsCount = Math.min(splitRowsLimit, Math.ceil(seatsBeforeLastRow / splitRowSeatCount));
+
+        for (let rowIndex = 0; rowIndex < splitRowsCount && nextSeat <= seatsBeforeLastRow; rowIndex += 1) {
+            const remainingBeforeLastRow = seatsBeforeLastRow - nextSeat + 1;
+            const rowSeatCount = Math.min(splitRowSeatCount, remainingBeforeLastRow);
+
+            rows.push({
+                seats: Array.from({ length: rowSeatCount }, (_, offset) => nextSeat + offset),
+                leftCount: Math.min(2, rowSeatCount),
+                isSplitRow: true,
+            });
+
+            nextSeat += rowSeatCount;
+        }
+
+        while (nextSeat <= seatsBeforeLastRow) {
+            const remainingBeforeLastRow = seatsBeforeLastRow - nextSeat + 1;
+            const rowSeatCount = Math.min(rightOnlySeatCount, remainingBeforeLastRow);
+
+            rows.push({
+                seats: Array.from({ length: rowSeatCount }, (_, offset) => nextSeat + offset),
+                leftCount: 0,
+                isRightOnlyRow: true,
+            });
+
+            nextSeat += rowSeatCount;
+        }
+
+        rows.push({
+            seats: Array.from({ length: 6 }, (_, offset) => nextSeat + offset),
+            leftCount: 2,
+            isLastRow: true,
+        });
+
+        return rows;
+    };
+
+    const busRows = isBus && totalSeats ? buildBusRows(totalSeats) : [];
     const toggleSeat = (seatNumber) => {
         setLocalSelectedSeats((prev) =>
             prev.includes(seatNumber)
@@ -61,35 +147,177 @@ const SeatSelectionModal = ({ isOpen, onClose, onSelectSeats, transportType, sel
                     </div>
 
                     <div className="bg-gray-50 p-3 rounded-lg mb-5">
-                        <div
-                            className="grid gap-1 justify-center"
-                            style={{ gridTemplateColumns: `repeat(${seatLayout.cols}, minmax(0, 1fr))` }}
-                        >
-                            {Array.from({ length: totalSeats }, (_, i) => {
-                                const seatNumber = i + 1;
-                                const isOccupied = occupiedSeats.includes(seatNumber);
-                                const isSelected = localSelectedSeats.includes(seatNumber);
-                                return (
-                                    <button
-                                        key={seatNumber}
-                                        onClick={() => !isOccupied && toggleSeat(seatNumber)}
-                                        disabled={isOccupied}
-                                        className={`
+                        {!safeSeatCapacity ? (
+                            <div className="py-10 text-center text-sm text-gray-600">
+                                Loading vehicle seat details...
+                            </div>
+                        ) : isBus ? (
+                            <div className="space-y-2">
+                                {busRows.map((row, rowIndex) => {
+                                    const leftCount = row.leftCount || 2;
+                                    const leftSeats = row.seats.slice(0, leftCount);
+                                    const rightSeats = row.seats.slice(leftCount);
+
+                                    let rowContent;
+
+                                    if (row.isLastRow && row.seats.length === 6) {
+                                        rowContent = (
+                                            <div className="grid grid-cols-6 gap-1">
+                                                {row.seats.map((seatNumber) => {
+                                                    const isOccupied = occupiedSeats.includes(seatNumber);
+                                                    const isSelected = localSelectedSeats.includes(seatNumber);
+                                                    return (
+                                                        <button
+                                                            key={seatNumber}
+                                                            onClick={() => !isOccupied && toggleSeat(seatNumber)}
+                                                            disabled={isOccupied}
+                                                            className={`
                       w-6 h-6 rounded border-2 transition-all duration-200 font-semibold text-xs flex items-center justify-center
                       ${isOccupied
-                                                ? 'bg-gray-400 border-gray-500 cursor-not-allowed'
-                                                : isSelected
-                                                    ? 'bg-green-500 border-green-600 text-white'
-                                                    : 'bg-white border-blue-400 hover:bg-blue-50 cursor-pointer'
-                                            }
+                                                                    ? 'bg-gray-400 border-gray-500 cursor-not-allowed'
+                                                                    : isSelected
+                                                                        ? 'bg-green-500 border-green-600 text-white'
+                                                                        : 'bg-white border-blue-400 hover:bg-blue-50 cursor-pointer'
+                                                                }
                     `}
-                                        title={`Seat ${seatNumber}`}
-                                    >
-                                        {seatNumber}
-                                    </button>
-                                );
-                            })}
-                        </div>
+                                                            title={`Seat ${seatNumber}`}
+                                                        >
+                                                            {seatNumber}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        );
+                                    } else if (row.isRightOnlyRow) {
+                                        rowContent = (
+                                            <div className="flex justify-center w-full">
+                                                <div className="flex items-center gap-5">
+                                                    <div className="flex gap-1 min-w-[3.5rem] justify-center">
+                                                        <div className="w-6 h-6" aria-hidden="true"></div>
+                                                    </div>
+                                                    <div className="flex gap-1 min-w-[5.5rem] justify-center">
+                                                        {row.seats.map((seatNumber) => {
+                                                            const isOccupied = occupiedSeats.includes(seatNumber);
+                                                            const isSelected = localSelectedSeats.includes(seatNumber);
+                                                            return (
+                                                                <button
+                                                                    key={seatNumber}
+                                                                    onClick={() => !isOccupied && toggleSeat(seatNumber)}
+                                                                    disabled={isOccupied}
+                                                                    className={`
+                      w-6 h-6 rounded border-2 transition-all duration-200 font-semibold text-xs flex items-center justify-center
+                      ${isOccupied
+                                                                            ? 'bg-gray-400 border-gray-500 cursor-not-allowed'
+                                                                            : isSelected
+                                                                                ? 'bg-green-500 border-green-600 text-white'
+                                                                                : 'bg-white border-blue-400 hover:bg-blue-50 cursor-pointer'
+                                                                        }
+                    `}
+                                                                    title={`Seat ${seatNumber}`}
+                                                                >
+                                                                    {seatNumber}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    } else {
+                                        rowContent = (
+                                            <div className="flex items-center gap-5">
+                                                <div className="flex gap-1 min-w-[3.5rem] justify-center">
+                                                    {leftSeats.map((seatNumber) => {
+                                                        const isOccupied = occupiedSeats.includes(seatNumber);
+                                                        const isSelected = localSelectedSeats.includes(seatNumber);
+                                                        return (
+                                                            <button
+                                                                key={seatNumber}
+                                                                onClick={() => !isOccupied && toggleSeat(seatNumber)}
+                                                                disabled={isOccupied}
+                                                                className={`
+                      w-6 h-6 rounded border-2 transition-all duration-200 font-semibold text-xs flex items-center justify-center
+                      ${isOccupied
+                                                                        ? 'bg-gray-400 border-gray-500 cursor-not-allowed'
+                                                                        : isSelected
+                                                                            ? 'bg-green-500 border-green-600 text-white'
+                                                                            : 'bg-white border-blue-400 hover:bg-blue-50 cursor-pointer'
+                                                                    }
+                    `}
+                                                                title={`Seat ${seatNumber}`}
+                                                            >
+                                                                {seatNumber}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                                <div className="flex gap-1 min-w-[5.5rem] justify-center">
+                                                    {rightSeats.map((seatNumber) => {
+                                                        const isOccupied = occupiedSeats.includes(seatNumber);
+                                                        const isSelected = localSelectedSeats.includes(seatNumber);
+                                                        return (
+                                                            <button
+                                                                key={seatNumber}
+                                                                onClick={() => !isOccupied && toggleSeat(seatNumber)}
+                                                                disabled={isOccupied}
+                                                                className={`
+                      w-6 h-6 rounded border-2 transition-all duration-200 font-semibold text-xs flex items-center justify-center
+                      ${isOccupied
+                                                                        ? 'bg-gray-400 border-gray-500 cursor-not-allowed'
+                                                                        : isSelected
+                                                                            ? 'bg-green-500 border-green-600 text-white'
+                                                                            : 'bg-white border-blue-400 hover:bg-blue-50 cursor-pointer'
+                                                                    }
+                    `}
+                                                                title={`Seat ${seatNumber}`}
+                                                            >
+                                                                {seatNumber}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+
+                                    return (
+                                        <div key={`row-${rowIndex}`} className="flex justify-center">
+                                            {rowContent}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div
+                                className="grid gap-1 justify-center"
+                                style={{ gridTemplateColumns: `repeat(${seatLayout.cols}, minmax(0, 1fr))` }}
+                            >
+                                {Array.from({ length: totalSeats }, (_, i) => {
+                                    const seatNumber = i + 1;
+                                    const isOccupied = occupiedSeats.includes(seatNumber);
+                                    const isSelected = localSelectedSeats.includes(seatNumber);
+                                    return (
+                                        <button
+                                            key={seatNumber}
+                                            onClick={() => !isOccupied && toggleSeat(seatNumber)}
+                                            disabled={isOccupied}
+                                            className={`
+                      w-6 h-6 rounded border-2 transition-all duration-200 font-semibold text-xs flex items-center justify-center
+                      ${isOccupied
+                                                    ? 'bg-gray-400 border-gray-500 cursor-not-allowed'
+                                                    : isSelected
+                                                        ? 'bg-green-500 border-green-600 text-white'
+                                                        : 'bg-white border-blue-400 hover:bg-blue-50 cursor-pointer'
+                                                }
+                    `}
+                                            title={`Seat ${seatNumber}`}
+                                        >
+                                            {seatNumber}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
 
                     {localSelectedSeats.length > 0 && (
@@ -114,8 +342,7 @@ const SeatSelectionModal = ({ isOpen, onClose, onSelectSeats, transportType, sel
                     <button
                         onClick={handleConfirm}
                         disabled={localSelectedSeats.length === 0}
-                        className={`px-4 py-2 rounded-lg font-medium text-white text-sm transition ${
-                            localSelectedSeats.length === 0
+                        className={`px-4 py-2 rounded-lg font-medium text-white text-sm transition ${localSelectedSeats.length === 0
                                 ? 'bg-gray-400 cursor-not-allowed'
                                 : 'bg-blue-600 hover:bg-blue-700'
                             }`}
@@ -143,6 +370,8 @@ const UpdateBooking = () => {
     const [occupiedSeats, setOccupiedSeats] = useState([]);
     const [loadingOccupiedSeats, setLoadingOccupiedSeats] = useState(false);
     const [farePerSeat, setFarePerSeat] = useState(0);
+    const [seatCapacity, setSeatCapacity] = useState(null);
+    const [seatCapacityLoading, setSeatCapacityLoading] = useState(false);
 
     const [formData, setFormData] = useState({
         phoneNumber: '',
@@ -178,9 +407,7 @@ const UpdateBooking = () => {
         const resolvedFarePerSeat = seatCount > 0 ? Number(booking.amount || 0) / seatCount : 0;
         setFarePerSeat(Number.isFinite(resolvedFarePerSeat) ? resolvedFarePerSeat : 0);
 
-        const toInputDateTime = booking.departureTime
-            ? new Date(booking.departureTime).toISOString().slice(0, 16)
-            : '';
+        const toInputDateTime = toDateTimeLocalValue(booking.departureTime);
         setFormData({
             phoneNumber: booking.phoneNumber || '',
             seatNumbers: (booking.seatNumbers || []).map((seat) => {
@@ -191,6 +418,33 @@ const UpdateBooking = () => {
             amount: booking.amount || 0,
         });
     }, [booking]);
+
+    useEffect(() => {
+        const fetchSeatCapacity = async () => {
+            if (!booking?.tripId) {
+                setSeatCapacity(null);
+                setSeatCapacityLoading(false);
+                return;
+            }
+
+            try {
+                setSeatCapacityLoading(true);
+                const response = await api.get(`/schedules/${booking.tripId}`);
+                const schedule = response.data?.schedule || response.data;
+                const vehicle = schedule?.vehicleID || {};
+                const capacity = Number(vehicle.seatCapacity);
+                setSeatCapacity(Number.isFinite(capacity) && capacity > 0 ? capacity : null);
+            } catch (err) {
+                console.error('Failed to fetch seat capacity:', err);
+                setSeatCapacity(null);
+            }
+            finally {
+                setSeatCapacityLoading(false);
+            }
+        };
+
+        fetchSeatCapacity();
+    }, [booking?.tripId]);
 
     useEffect(() => {
         const fetchOccupiedSeats = async () => {
@@ -260,10 +514,10 @@ const UpdateBooking = () => {
     // Validate phone number format: +94 followed by exactly 9 digits
     const validatePhoneNumber = (phone) => {
         if (!phone) return '';
-        
+
         // Check format: +94 + exactly 9 digits
         const isValid = /^\+94\d{9}$/.test(phone);
-        
+
         if (!isValid) {
             // Check if user started with +94
             if (phone.startsWith('+94')) {
@@ -279,7 +533,7 @@ const UpdateBooking = () => {
                 return 'Phone number must start with +94';
             }
         }
-        
+
         return '';
     };
 
@@ -313,7 +567,7 @@ const UpdateBooking = () => {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
-        
+
         // Real-time validation for phone number
         if (name === 'phoneNumber') {
             const phoneError = validatePhoneNumber(value);
@@ -380,9 +634,13 @@ const UpdateBooking = () => {
                 <p className="text-sm text-gray-600 mb-6">Only editable fields are shown below.</p>
 
                 {booking && (
-                    <div className="mb-6 p-4 rounded-lg bg-gray-50 border border-gray-200 text-sm text-gray-700">
-                        <p><span className="font-semibold">Booking ID:</span> {booking._id}</p>
-                        <p><span className="font-semibold">Status:</span> {booking.bookingStatus}</p>
+                    <div className="mb-6 p-4 rounded-lg bg-gray-50 border border-gray-200 text-sm text-gray-700 flex items-center justify-between">
+                        <div>
+                            <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Status</p>
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                                {booking.bookingStatus}
+                            </span>
+                        </div>
                     </div>
                 )}
 
@@ -407,8 +665,7 @@ const UpdateBooking = () => {
                             value={formData.phoneNumber}
                             onChange={handleChange}
                             disabled={!isPending || saving}
-                            className={`w-full border rounded-lg px-4 py-2 ${
-                                errors.phoneNumber ? 'border-red-500' : 'border-gray-300'
+                            className={`w-full border rounded-lg px-4 py-2 ${errors.phoneNumber ? 'border-red-500' : 'border-gray-300'
                                 }`}
                             placeholder="+94XXXXXXXXX"
                         />
@@ -422,15 +679,18 @@ const UpdateBooking = () => {
                         <button
                             type="button"
                             onClick={() => setSeatModalOpen(true)}
-                            disabled={!isPending || saving || loadingOccupiedSeats}
-                            className={`w-full px-4 py-2 border rounded-lg text-left transition ${
-                                errors.seatNumbers
+                            disabled={!isPending || saving || loadingOccupiedSeats || seatCapacityLoading || !seatCapacity}
+                            className={`w-full px-4 py-2 border rounded-lg text-left transition ${errors.seatNumbers
                                     ? 'border-red-500 bg-red-50'
                                     : 'border-gray-300 bg-gray-50'
                                 } hover:bg-blue-50 disabled:opacity-60 disabled:cursor-not-allowed`}
                         >
-                            {loadingOccupiedSeats ? (
+                            {seatCapacityLoading ? (
+                                <p className="text-gray-500">Loading vehicle seat details...</p>
+                            ) : loadingOccupiedSeats ? (
                                 <p className="text-gray-500">Loading seat availability...</p>
+                            ) : !seatCapacity ? (
+                                <p className="text-gray-500">Vehicle seat capacity unavailable</p>
                             ) : formData.seatNumbers.length > 0 ? (
                                 <div>
                                     <p className="font-medium text-gray-800">
@@ -476,20 +736,15 @@ const UpdateBooking = () => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Departure Time</label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Departure Time (read only)</label>
                         <input
                             type="datetime-local"
                             name="departureTime"
                             value={formData.departureTime}
-                            onChange={handleChange}
-                            disabled={!isPending || saving}
-                            className={`w-full border rounded-lg px-4 py-2 ${
-                                errors.departureTime ? 'border-red-500' : 'border-gray-300'
-                                }`}
+                            readOnly
+                            disabled
+                            className="w-full border rounded-lg px-4 py-2 bg-gray-100 text-gray-600 cursor-not-allowed"
                         />
-                        {errors.departureTime && (
-                            <p className="text-red-500 text-sm mt-1">{errors.departureTime}</p>
-                        )}
                     </div>
 
                     <div className="flex gap-3 justify-end pt-2">
@@ -518,6 +773,7 @@ const UpdateBooking = () => {
                 transportType={booking?.transportType || 'BUS'}
                 selectedSeats={formData.seatNumbers.map((s) => Number(s)).filter((n) => !Number.isNaN(n))}
                 occupiedSeats={occupiedSeats}
+                seatCapacity={seatCapacity}
             />
         </div>
     );
