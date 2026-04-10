@@ -37,6 +37,7 @@ const UpdateBooking = () => {
     const [seatCapacity, setSeatCapacity] = useState(null);
     const [seatCapacityLoading, setSeatCapacityLoading] = useState(false);
 
+    // Local form state for editable booking fields
     const [formData, setFormData] = useState({
         phoneNumber: '',
         seatNumbers: [],
@@ -44,6 +45,7 @@ const UpdateBooking = () => {
         amount: 0,
     });
 
+    // Fetch booking details if not passed via route state
     useEffect(() => {
         const fetchBooking = async () => {
             if (booking) return;
@@ -65,6 +67,7 @@ const UpdateBooking = () => {
         fetchBooking();
     }, [booking, id]);
 
+    // Initialize form values and fare per seat once booking is loaded
     useEffect(() => {
         if (!booking) return;
         const seatCount = Number(booking.seatCount) || (booking.seatNumbers || []).length || 0;
@@ -83,6 +86,7 @@ const UpdateBooking = () => {
         });
     }, [booking]);
 
+    // Fetch vehicle seat capacity for the trip (used by seat selector)
     useEffect(() => {
         const fetchSeatCapacity = async () => {
             if (!booking?.tripId) {
@@ -110,6 +114,7 @@ const UpdateBooking = () => {
         fetchSeatCapacity();
     }, [booking?.tripId]);
 
+    // Load currently occupied seats for this trip, excluding this booking
     useEffect(() => {
         const fetchOccupiedSeats = async () => {
             if (!booking || !formData.departureTime) {
@@ -150,6 +155,7 @@ const UpdateBooking = () => {
 
     const calculateAmount = (seatCount) => seatCount * farePerSeat;
 
+    // Ensure departure time is valid, future, and within one month
     const validateDepartureTime = (value) => {
         if (!value) {
             return 'Departure time is required';
@@ -176,6 +182,7 @@ const UpdateBooking = () => {
     };
 
     // Validate phone number format: +94 followed by exactly 9 digits
+    // Provides user-friendly guidance for Sri Lankan phone numbers
     const validatePhoneNumber = (phone) => {
         if (!phone) return '';
 
@@ -201,6 +208,7 @@ const UpdateBooking = () => {
         return '';
     };
 
+    // Run all validations and return any form-level or field-level errors
     const validate = () => {
         const newErrors = {};
         if (!isPending) {
@@ -228,6 +236,7 @@ const UpdateBooking = () => {
         return { formError: '', fieldErrors: {} };
     };
 
+    // Handle input changes and perform real-time validation for key fields
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
@@ -244,6 +253,7 @@ const UpdateBooking = () => {
         }
     };
 
+    // Update selected seats and recalculate amount when modal confirms
     const handleSelectSeats = (seats) => {
         const seatLabels = seats.map((s) => String(s));
         setFormData((prev) => ({
@@ -256,6 +266,7 @@ const UpdateBooking = () => {
         }
     };
 
+    // Validate and submit updated booking details to backend
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
