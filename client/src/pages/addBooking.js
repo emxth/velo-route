@@ -293,6 +293,7 @@ const AddBooking = () => {
     return '';
   };
 
+  
   // Handle Input Change
   const handleInputChange = (e) => {
     const { name, value } = e.target;
