@@ -17,6 +17,10 @@ import ComplaintDetailPage from "./pages/ComplaintDetailPage";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import SchedulePage from "./pages/SchedulePage";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminRouteManagement from "./pages/admin/AdminRouteManagement";
+import AdminScheduleManagement from "./pages/admin/AdminScheduleManagement";
+import RouteScheduleManagement from "./pages/admin/AdminDashboard";
 
 
 const Unauthorized = () => <div>Unauthorized</div>;
@@ -41,8 +45,13 @@ function App() {
             <Route path="/welcome" element={<Welcome />} />
             <Route path="/profile" element={<Profile />} />
 
+
             <Route element={<ProtectedRoute roles={["admin"]} />}>
               <Route path="/admin" element={<AdminPage />} />
+              <Route path="/admin/dashboard" element={<RouteScheduleManagement />} />
+              <Route path="/admin/routes" element={<AdminRouteManagement />} />
+              <Route path="/admin/schedules" element={<AdminScheduleManagement />} />
+
             </Route>
 
             <Route element={<ProtectedRoute roles={["operator"]} />}>
@@ -57,9 +66,13 @@ function App() {
               <Route path="/analyst" element={<AnalystPage />} />
             </Route>
 
+            <Route element={<ProtectedRoute />}>
+              <Route path="/schedules" element={<SchedulePage />} />
+            </Route>
+
             <Route path="/complaints" element={<ComplaintsPage />} />
             <Route path="/complaints/:id" element={<ComplaintDetailPage />} />
-            <Route path="/schedules" element={<SchedulePage />} />
+
           </Route>
         </Route>
       </Routes>
