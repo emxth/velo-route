@@ -43,6 +43,7 @@ const AddBooking = () => {
   const [loadingOccupiedSeats, setLoadingOccupiedSeats] = useState(false);
   const [vehicleDetails, setVehicleDetails] = useState(null);
 
+  // Convert stored date/time to a value usable by datetime-local input
   const toDateTimeLocalValue = (value) => {
     if (!value) {
       return '';
@@ -57,6 +58,7 @@ const AddBooking = () => {
     return localDate.toISOString().slice(0, 16);
   };
 
+  // Prefill form data when coming from Trip Finder with a selected schedule
   useEffect(() => {
     const prefill = location.state?.prefillBooking;
 
@@ -89,6 +91,7 @@ const AddBooking = () => {
     return seatCount * seatFare;
   };
 
+  // Validate that departure time is in future and within one month
   const validateDepartureTime = (value) => {
     if (!value?.trim()) {
       return 'Departure time is required';
@@ -115,6 +118,7 @@ const AddBooking = () => {
   };
 
   // Validation Rules
+  // Run all field-level validations before submitting the form
   const validateForm = () => {
     const newErrors = {};
 
@@ -169,6 +173,7 @@ const AddBooking = () => {
   };
 
   // Validate phone number format: +94 followed by exactly 9 digits
+  // Provides user-friendly guidance while typing Sri Lankan phone numbers
   const validatePhoneNumber = (phone) => {
     if (!phone) return '';
     
@@ -196,6 +201,7 @@ const AddBooking = () => {
 
   
   // Handle Input Change
+  // Update form state and perform real-time validation for key fields
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -226,6 +232,7 @@ const AddBooking = () => {
   };
 
   // Handle Seat Selection from Modal
+  // Update selected seats and recalculate amount when user confirms seat selection
   const handleSelectSeats = (seats) => {
     // Calculate new amount based on selected seats
     const newAmount = calculateAmount(seats.length);
@@ -243,6 +250,7 @@ const AddBooking = () => {
     }
   };
 
+  // Recalculate total amount whenever fare per seat changes
   useEffect(() => {
     setFormData((prev) => ({
       ...prev,
@@ -250,6 +258,7 @@ const AddBooking = () => {
     }));
   }, [farePerSeat]);
 
+  // Load estimated fare and vehicle details when tripId changes
   useEffect(() => {
     const tripId = formData.tripId.trim();
 
@@ -288,6 +297,7 @@ const AddBooking = () => {
     fetchEstimatedFare();
   }, [formData.tripId]);
 
+  // Fetch occupied seats whenever core trip details change
   useEffect(() => {
     const hasRequiredTripDetails =
       formData.tripId.trim() &&
@@ -338,6 +348,7 @@ const AddBooking = () => {
   }, [formData.tripId, formData.transportType, formData.fromLocation, formData.toLocation, formData.departureTime]);
 
   // Handle Form Submission
+  // Validate form and send booking data to backend API
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
