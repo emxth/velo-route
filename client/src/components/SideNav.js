@@ -18,6 +18,12 @@ const NAV_GROUPS = [
     items: [{ key: "analyst", label: "Analyst Area", to: "/analyst" }],
   },
   {
+    category: "Schedule & Routes",
+    items: [
+      { key: "schedules", label: "Trip Finder", to: "/schedules", public: true },
+    ]
+  },
+  {
     category: "Complaints & Feedback",
     items: [
       // mark as public so it bypasses allowed filter
@@ -39,6 +45,7 @@ const NAV_GROUPS = [
       { key: "admin", label: "Admin View Bookings", to: "/admin/bookings" }
       ],
   },
+
 ];
 
 const SideNav = ({ allowed = [] }) => {

@@ -21,6 +21,9 @@ import AddBooking from "./pages/addBooking";
 import ViewBookings from "./pages/ViewBookings";
 import UpdateBooking from "./pages/UpdateBooking";
 import AdminViewBooking from "./pages/AdminViewBooking";
+//Schedule pages
+import SchedulePage from "./pages/SchedulePage";
+
 
 const Unauthorized = () => <div>Unauthorized</div>;
 
@@ -67,6 +70,9 @@ function App() {
             <Route path="/addBooking" element={<AddBooking />} />
             <Route path="/viewBookings" element={<ViewBookings />} />
             <Route path="/updateBooking/:id" element={<UpdateBooking />} />
+
+            {/* Schedule routes */}
+            <Route path="/schedules" element={<SchedulePage />} />
           </Route>
         </Route>
       </Routes>

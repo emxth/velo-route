@@ -1,80 +1,276 @@
+/* Tailwind v3 directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Custom base styles */
-@layer base {
-  body {
-    @apply bg-neutral-50 text-neutral-900;
-  }
+/* ===== Design Tokens ===== */
+:root {
+  --color-primary: #1A5276;
+  --color-success: #27AE60;
+  --color-warning: #E67E22;
+  --color-surface: #F4F6F7;
+  --color-text: #2C3E50;
 
-  h1 {
-    @apply text-4xl font-bold font-display;
-  }
+  --color-white: #ffffff;
+  --color-border: #dbe3e8;
 
-  h2 {
-    @apply mb-6 text-2xl font-bold text-neutral-900 font-display;
-  }
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
 
-  h3 {
-    @apply text-2xl font-semibold font-display;
-  }
+  --shadow-sm: 0 2px 8px rgba(44, 62, 80, 0.08);
+  --shadow-md: 0 8px 24px rgba(44, 62, 80, 0.12);
 
-  label {
-    @apply text-sm font-medium text-neutral-700;
+  --transition-fast: 0.2s ease;
+}
+
+/* ===== Reset / Base ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: Inter, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--color-text);
+  background:
+    radial-gradient(circle at top right, rgba(39, 174, 96, 0.09), transparent 35%),
+    radial-gradient(circle at top left, rgba(26, 82, 118, 0.11), transparent 30%),
+    var(--color-surface);
+  line-height: 1.5;
+}
+
+/* ===== Global Element Styling ===== */
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 0;
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+p {
+  margin-top: 0;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+a:hover {
+  color: #154360;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+/* ===== Utility Classes (optional but useful in React components) ===== */
+.container {
+  width: min(1120px, 92%);
+  margin-inline: auto;
+}
+
+.card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 1.25rem;
+}
+
+.btn {
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+.btn-primary:hover {
+  background: #154360;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-success {
+  background: var(--color-success);
+  color: var(--color-white);
+}
+.btn-success:hover {
+  background: #1f8f4d;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-warning {
+  background: var(--color-warning);
+  color: var(--color-white);
+}
+.btn-warning:hover {
+  background: #ca6a19;
+  box-shadow: var(--shadow-sm);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.badge-success {
+  background: rgba(39, 174, 96, 0.12);
+  color: #1f8f4d;
+}
+
+.badge-warning {
+  background: rgba(230, 126, 34, 0.14);
+  color: #b65f16;
+}
+
+
+/* ===== Login page helpers ===== */
+
+/* light neutral background used in Login wrapper */
+.bg-neutral-50 {
+  background-color: #f8fafb;
+}
+
+/* card shadow alias */
+.shadow-card {
+  box-shadow: 0 10px 28px rgba(44, 62, 80, 0.1);
+}
+
+/* input styling */
+.input-field {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.68rem 0.8rem;
+  background: #fff;
+  color: var(--color-text);
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.input-field:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(26, 82, 118, 0.18);
+}
+
+/* link color used in forgot password */
+.text-primary-600 {
+  color: var(--color-primary);
+}
+.text-primary-600:hover {
+  color: #154360;
+}
+
+/* main login button */
+.btn-secondary {
+  border: none;
+  border-radius: 10px;
+  padding: 0.72rem 1rem;
+  background: var(--color-success);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+.btn-secondary:hover {
+  background: #1f8f4d;
+  box-shadow: var(--shadow-sm);
+}
+.btn-secondary:active {
+  transform: translateY(1px);
+}
+
+/* outline button */
+.btn-outline {
+  border: 1px solid var(--color-primary);
+  border-radius: 10px;
+  padding: 0.72rem 1rem;
+  background: transparent;
+  color: var(--color-primary);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.btn-outline:hover {
+  background: rgba(26, 82, 118, 0.08);
+}
+
+/* danger palette for error box */
+.bg-danger-50 {
+  background: rgba(230, 126, 34, 0.1);
+}
+.text-danger-900 {
+  color: #8f4a12;
+}
+.border-danger-500 {
+  border-color: var(--color-warning);
+}
+
+/* improve default label + heading in this form */
+label {
+  display: inline-block;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+h2 {
+  margin-bottom: 1rem;
+  color: var(--color-text);
+}
+/* Add these animations to your existing CSS */
+@keyframes slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
   }
 }
 
-/* Custom component classes */
-@layer components {
-  .btn-primary {
-    @apply px-4 py-2 font-medium text-white transition-colors duration-200 rounded-lg bg-primary-500 hover:bg-primary-600;
-  }
-
-  .btn-secondary {
-    @apply px-4 py-2 font-medium text-white transition-colors duration-200 rounded-lg bg-secondary-500 hover:bg-secondary-600;
-  }
-
-  .btn-outline {
-    @apply px-4 py-2 font-medium transition-all duration-200 border-2 rounded-lg border-primary-500 text-primary-500 hover:bg-primary-500 hover:text-white;
-  }
-
-  .input-field {
-    @apply w-full px-3 py-2 border rounded-lg border-neutral-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
-  }
-
-  /* .card {
-    @apply p-6 bg-white rounded-xl shadow-card;
-  } */
-
-  .card-hover {
-    @apply p-6 transition-shadow duration-300 bg-white rounded-xl shadow-card hover:shadow-soft;
-  }
-
-  .badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
-  }
-
-  .badge-primary {
-    @apply badge bg-primary-100 text-primary-800;
-  }
-
-  .badge-success {
-    @apply badge bg-success-100 text-success-800;
-  }
-
-  .badge-warning {
-    @apply badge bg-warning-100 text-warning-800;
-  }
-
-  .badge-danger {
-    @apply badge bg-danger-100 text-danger-800;
-  }
+.animate-slide {
+  animation: slide 1.5s linear infinite;
 }
 
-/* Custom utilities */
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+.delay-100 {
+  animation-delay: 100ms;
+}
+
+.delay-200 {
+  animation-delay: 200ms;
+}
+
+
+.hover\:bg-gray-50:hover {
+  background-color: #f9fafb;
 }
