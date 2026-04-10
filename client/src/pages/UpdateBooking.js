@@ -142,8 +142,7 @@ const UpdateBooking = () => {
     const [errors, setErrors] = useState({});
     const [occupiedSeats, setOccupiedSeats] = useState([]);
     const [loadingOccupiedSeats, setLoadingOccupiedSeats] = useState(false);
-
-    const FARE_PER_SEAT = 500;
+    const [farePerSeat, setFarePerSeat] = useState(0);
 
     const [formData, setFormData] = useState({
         phoneNumber: '',
@@ -175,6 +174,10 @@ const UpdateBooking = () => {
 
     useEffect(() => {
         if (!booking) return;
+        const seatCount = Number(booking.seatCount) || (booking.seatNumbers || []).length || 0;
+        const resolvedFarePerSeat = seatCount > 0 ? Number(booking.amount || 0) / seatCount : 0;
+        setFarePerSeat(Number.isFinite(resolvedFarePerSeat) ? resolvedFarePerSeat : 0);
+
         const toInputDateTime = booking.departureTime
             ? new Date(booking.departureTime).toISOString().slice(0, 16)
             : '';
@@ -227,7 +230,7 @@ const UpdateBooking = () => {
 
     const isPending = booking?.bookingStatus === 'PENDING';
 
-    const calculateAmount = (seatCount) => seatCount * FARE_PER_SEAT;
+    const calculateAmount = (seatCount) => seatCount * farePerSeat;
 
     const validateDepartureTime = (value) => {
         if (!value) {
@@ -469,7 +472,7 @@ const UpdateBooking = () => {
                                 className="w-full pl-12 pr-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed font-semibold"
                             />
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">Auto-calculated at Rs. {FARE_PER_SEAT} per seat</p>
+                        <p className="text-xs text-gray-500 mt-1">Auto-calculated at Rs. {farePerSeat} per seat</p>
                     </div>
 
                     <div>

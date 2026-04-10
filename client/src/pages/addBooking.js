@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDown, X, AlertCircle, CheckCircle } from 'lucide-react';
 import api from '../api/axios';
 
@@ -153,9 +153,10 @@ const SeatSelectionModal = ({ isOpen, onClose, onSelectSeats, transportType, sel
 // Main Trip Booking Form Component
 const AddBooking = () => {
   const navigate = useNavigate();
-  
-  // Hardcoded fare per seat (100)
-  const FARE_PER_SEAT = 500;
+  const location = useLocation();
+  const isScheduleAutofill = Boolean(location.state?.prefillBooking);
+
+  const [farePerSeat, setFarePerSeat] = useState(0);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -182,10 +183,52 @@ const AddBooking = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [occupiedSeats, setOccupiedSeats] = useState([]);
   const [loadingOccupiedSeats, setLoadingOccupiedSeats] = useState(false);
+  const [vehicleDetails, setVehicleDetails] = useState(null);
+
+  const toDateTimeLocalValue = (value) => {
+    if (!value) {
+      return '';
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+
+    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return localDate.toISOString().slice(0, 16);
+  };
+
+  useEffect(() => {
+    const prefill = location.state?.prefillBooking;
+
+    if (!prefill) {
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      transportType: prefill.transportType === 'TRAIN' ? 'TRAIN' : 'BUS',
+      tripId: prefill.tripId || '',
+      fromLocation: prefill.fromLocation || '',
+      toLocation: prefill.toLocation || '',
+      departureTime: toDateTimeLocalValue(prefill.departureTime),
+      seatNumbers: [],
+      amount: 0,
+      coachNumber: '',
+    }));
+
+    setFarePerSeat(Number(prefill.estimatedFare) || 0);
+    setVehicleDetails(null);
+
+    setErrors({});
+    setErrorMessage('');
+    setSuccessMessage('');
+  }, [location.state]);
 
   // Calculate amount based on seat count
-  const calculateAmount = (seatCount) => {
-    return seatCount * FARE_PER_SEAT;
+  const calculateAmount = (seatCount, seatFare = farePerSeat) => {
+    return seatCount * seatFare;
   };
 
   const validateDepartureTime = (value) => {
@@ -343,6 +386,51 @@ const AddBooking = () => {
   };
 
   useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      amount: calculateAmount(prev.seatNumbers.length),
+    }));
+  }, [farePerSeat]);
+
+  useEffect(() => {
+    const tripId = formData.tripId.trim();
+
+    if (!tripId) {
+      setFarePerSeat(0);
+      setVehicleDetails(null);
+      return;
+    }
+
+    const fetchEstimatedFare = async () => {
+      try {
+        const response = await api.get(`/schedules/${tripId}`);
+        const schedule = response.data?.schedule || response.data;
+        const estimatedFare = Number(schedule?.routeId?.estimatedFare) || 0;
+        const vehicle = schedule?.vehicleID || {};
+
+        setFarePerSeat(estimatedFare);
+        setVehicleDetails({
+          registrationNumber: vehicle.registrationNumber || 'N/A',
+          category: vehicle.category || 'N/A',
+          type: vehicle.type || 'N/A',
+          brand: vehicle.brand || 'N/A',
+          model: vehicle.model || 'N/A',
+          yearOfManufacture: vehicle.yearOfManufacture || 'N/A',
+          seatCapacity: vehicle.seatCapacity || 'N/A',
+          cargoCapacityKg: vehicle.cargoCapacityKg || 'N/A',
+          status: vehicle.status || 'N/A',
+        });
+      } catch (err) {
+        console.error('Failed to fetch route estimated fare:', err);
+        setFarePerSeat(0);
+        setVehicleDetails(null);
+      }
+    };
+
+    fetchEstimatedFare();
+  }, [formData.tripId]);
+
+  useEffect(() => {
     const hasRequiredTripDetails =
       formData.tripId.trim() &&
       formData.fromLocation.trim() &&
@@ -427,6 +515,8 @@ const AddBooking = () => {
         departureTime: '',
         amount: 0,
       });
+      setFarePerSeat(0);
+      setVehicleDetails(null);
 
       // Redirect to view bookings after 2 seconds
       setTimeout(() => {
@@ -478,6 +568,8 @@ const AddBooking = () => {
             onSubmit={handleSubmit}
             className="lg:col-span-2 bg-white rounded-2xl shadow-xl border border-slate-100 p-6 md:p-8 space-y-7"
           >
+            <input type="hidden" name="tripId" value={formData.tripId} />
+
             <div className="pb-3 border-b border-slate-200">
               <h2 className="text-xl font-semibold text-slate-800">Passenger Details</h2>
             </div>
@@ -513,7 +605,12 @@ const AddBooking = () => {
                     name="transportType"
                     value={formData.transportType}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 appearance-none bg-white cursor-pointer"
+                    disabled={isScheduleAutofill}
+                    className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg appearance-none bg-white ${
+                      isScheduleAutofill
+                        ? 'cursor-not-allowed bg-gray-100 text-gray-600'
+                        : 'focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer'
+                    }`}
                   >
                     <option value="BUS">Bus</option>
                     <option value="TRAIN">Train</option>
@@ -523,27 +620,6 @@ const AddBooking = () => {
                     className="absolute right-3 top-3 text-gray-400 pointer-events-none"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Trip ID <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="tripId"
-                  value={formData.tripId}
-                  onChange={handleInputChange}
-                  placeholder="e.g., TR12345"
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
-                    errors.tripId
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-cyan-500'
-                  }`}
-                />
-                {errors.tripId && (
-                  <p className="text-red-500 text-sm mt-1">{errors.tripId}</p>
-                )}
               </div>
 
               {formData.transportType === 'TRAIN' && (
@@ -584,11 +660,14 @@ const AddBooking = () => {
                   name="fromLocation"
                   value={formData.fromLocation}
                   onChange={handleInputChange}
+                  readOnly={isScheduleAutofill}
                   placeholder="Enter departure location"
                   className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
                     errors.fromLocation
                       ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-cyan-500'
+                      : isScheduleAutofill
+                        ? 'border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed'
+                        : 'border-gray-300 focus:ring-cyan-500'
                   }`}
                 />
                 {errors.fromLocation && (
@@ -605,11 +684,14 @@ const AddBooking = () => {
                   name="toLocation"
                   value={formData.toLocation}
                   onChange={handleInputChange}
+                  readOnly={isScheduleAutofill}
                   placeholder="Enter destination location"
                   className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
                     errors.toLocation
                       ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-cyan-500'
+                      : isScheduleAutofill
+                        ? 'border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed'
+                        : 'border-gray-300 focus:ring-cyan-500'
                   }`}
                 />
                 {errors.toLocation && (
@@ -626,10 +708,13 @@ const AddBooking = () => {
                   name="departureTime"
                   value={formData.departureTime}
                   onChange={handleInputChange}
+                  readOnly={isScheduleAutofill}
                   className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
                     errors.departureTime
                       ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-cyan-500'
+                      : isScheduleAutofill
+                        ? 'border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed'
+                        : 'border-gray-300 focus:ring-cyan-500'
                   }`}
                 />
                 {errors.departureTime && (
@@ -640,6 +725,11 @@ const AddBooking = () => {
 
             <div className="pb-3 border-b border-slate-200">
               <h2 className="text-xl font-semibold text-slate-800">Seat Selection</h2>
+            </div>
+
+            <div className="inline-flex items-center gap-3 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2">
+              <span className="text-sm font-semibold text-cyan-800">Price per seat</span>
+              <span className="text-lg font-bold text-cyan-900">Rs {farePerSeat || 0}</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -672,7 +762,7 @@ const AddBooking = () => {
                     <p className="text-gray-500">
                       {formData.tripId.trim() && formData.fromLocation.trim() && formData.toLocation.trim() && formData.departureTime
                         ? 'Click to select seats'
-                        : 'Enter Trip ID, From, To and Departure Time first'}
+                        : 'Select a schedule from Trip Finder first'}
                     </p>
                   )}
                 </button>
@@ -707,7 +797,11 @@ const AddBooking = () => {
                     className="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed font-semibold"
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Auto-calculated at Rs {FARE_PER_SEAT} per seat</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {farePerSeat > 0
+                    ? `Auto-calculated at Rs ${farePerSeat} per seat`
+                    : 'Fare will be loaded from route estimated fare'}
+                </p>
               </div>
             </div>
 
@@ -731,37 +825,84 @@ const AddBooking = () => {
             </button>
           </form>
 
-          <aside className="bg-slate-900 text-slate-100 rounded-2xl shadow-xl p-6 sticky top-6">
-            <h3 className="text-lg font-semibold mb-4">Booking Summary</h3>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between gap-3">
-                <span className="text-slate-300">Transport</span>
-                <span className="font-medium">{formData.transportType}</span>
+          <div className="space-y-6 lg:sticky lg:top-6">
+            <aside className="bg-slate-900 text-slate-100 rounded-2xl shadow-xl p-6">
+              <h3 className="text-lg font-semibold mb-4">Booking Summary</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between gap-3">
+                  <span className="text-slate-300">Transport</span>
+                  <span className="font-medium">{formData.transportType}</span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-slate-300">Route</span>
+                  <span className="font-medium text-right">{(formData.fromLocation && formData.toLocation) ? `${formData.fromLocation} to ${formData.toLocation}` : '-'}</span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-slate-300">Seat Count</span>
+                  <span className="font-medium">{formData.seatNumbers.length}</span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-slate-300">Seats</span>
+                  <span className="font-medium text-right max-w-[180px] break-words">
+                    {formData.seatNumbers.length > 0 ? [...formData.seatNumbers].sort((a, b) => a - b).join(', ') : '-'}
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between gap-3">
-                <span className="text-slate-300">Trip ID</span>
-                <span className="font-medium">{formData.tripId || '-'}</span>
+              <div className="border-t border-slate-700 mt-5 pt-5">
+                <p className="text-slate-300 text-sm mb-1">Estimated Total</p>
+                <p className="text-3xl font-bold">Rs {formData.amount}</p>
               </div>
-              <div className="flex justify-between gap-3">
-                <span className="text-slate-300">Route</span>
-                <span className="font-medium text-right">{(formData.fromLocation && formData.toLocation) ? `${formData.fromLocation} to ${formData.toLocation}` : '-'}</span>
+            </aside>
+
+            <aside className="bg-slate-900 text-slate-100 rounded-2xl shadow-xl p-6">
+              <h3 className="text-lg font-semibold mb-4">Vehicle Details</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between gap-3">
+                  <span className="text-slate-300">Category</span>
+                  <span className="font-medium">{vehicleDetails?.category || (formData.transportType === 'TRAIN' ? 'Train' : 'Bus')}</span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-slate-300">Registration</span>
+                  <span className="font-medium text-right">{vehicleDetails?.registrationNumber || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-slate-300">Brand / Model</span>
+                  <span className="font-medium text-right">{vehicleDetails ? `${vehicleDetails.brand} / ${vehicleDetails.model}` : 'N/A'}</span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-slate-300">Year</span>
+                  <span className="font-medium">{vehicleDetails?.yearOfManufacture || 'N/A'}</span>
+                </div>
+                {formData.transportType === 'BUS' ? (
+                  <>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-slate-300">Seat Capacity</span>
+                      <span className="font-medium">{vehicleDetails?.seatCapacity || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-slate-300">Service Type</span>
+                      <span className="font-medium">{vehicleDetails?.type || 'N/A'}</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-slate-300">Train Type</span>
+                      <span className="font-medium">{vehicleDetails?.type || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-slate-300">Coach</span>
+                      <span className="font-medium">{formData.coachNumber || 'Not selected'}</span>
+                    </div>
+                  </>
+                )}
               </div>
-              <div className="flex justify-between gap-3">
-                <span className="text-slate-300">Seat Count</span>
-                <span className="font-medium">{formData.seatNumbers.length}</span>
+              <div className="border-t border-slate-700 mt-5 pt-5">
+                <p className="text-slate-300 text-sm mb-1">Availability Status</p>
+                <p className="text-xl font-bold">{vehicleDetails?.status || 'N/A'}</p>
               </div>
-              <div className="flex justify-between gap-3">
-                <span className="text-slate-300">Seats</span>
-                <span className="font-medium text-right max-w-[180px] break-words">
-                  {formData.seatNumbers.length > 0 ? [...formData.seatNumbers].sort((a, b) => a - b).join(', ') : '-'}
-                </span>
-              </div>
-            </div>
-            <div className="border-t border-slate-700 mt-5 pt-5">
-              <p className="text-slate-300 text-sm mb-1">Estimated Total</p>
-              <p className="text-3xl font-bold">Rs {formData.amount}</p>
-            </div>
-          </aside>
+            </aside>
+          </div>
         </div>
       </div>
 

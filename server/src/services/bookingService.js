@@ -3,6 +3,7 @@ import logger from "../config/logger.js";
 import { sendSMS } from "../services/notificationService.js";
 import { createCheckoutSession, refundPayment, retrieveSession } from "./paymentService.js";
 import { ApiError } from "../utils/apiError.js";
+import Schedule from "../models/Schedule.js";
 
 /*
   Service Layer = Business rules
@@ -29,6 +30,30 @@ const validateDepartureTimeWindow = (value) => {
   }
 
   return departureDate;
+};
+
+const resolveEstimatedFareForTrip = async (tripId) => {
+  try {
+    const schedule = await Schedule.findById(tripId).populate("routeId", "estimatedFare");
+
+    if (!schedule?.routeId) {
+      throw new ApiError(400, "Invalid tripId: schedule not found");
+    }
+
+    const estimatedFare = Number(schedule.routeId.estimatedFare);
+
+    if (!Number.isFinite(estimatedFare) || estimatedFare <= 0) {
+      throw new ApiError(400, "Route estimatedFare is not configured for this trip");
+    }
+
+    return estimatedFare;
+  } catch (err) {
+    if (err instanceof ApiError) {
+      throw err;
+    }
+
+    throw new ApiError(400, "Invalid tripId format");
+  }
 };
 
 export const createBooking = async (userId, data) => {
@@ -81,7 +106,7 @@ export const createBooking = async (userId, data) => {
   }
 
   const seatCount = seatNumbers.length;
-  const pricePerSeat = 500; //must Replace with transport module API
+  const pricePerSeat = await resolveEstimatedFareForTrip(tripId);
   const totalAmount = pricePerSeat * seatCount;
 
   // ---------------- Create Booking ----------------
@@ -384,7 +409,7 @@ export const updateBooking = async (bookingId, userId, data) => {
     booking.seatNumbers = seatNumbers;
     booking.seatCount = seatNumbers.length;
 
-    const pricePerSeat = 500;
+    const pricePerSeat = await resolveEstimatedFareForTrip(booking.tripId);
     booking.amount = pricePerSeat * booking.seatCount;
   }
 
