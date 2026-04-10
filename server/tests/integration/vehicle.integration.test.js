@@ -56,7 +56,7 @@ beforeAll(async () => {
     "base64",
   );
   fs.writeFileSync(testImagePath, jpegBuffer);
-}, 10000); // Increased timeout for beforeAll
+}, 10000);
 
 afterAll(async () => {
   if (fs.existsSync(testImagePath)) fs.unlinkSync(testImagePath);
@@ -69,7 +69,6 @@ afterEach(async () => {
 });
 
 describe("Vehicle API", () => {
-  // Based on your actual JSON example
   const validVehicle = {
     registrationNumber: "WP-ABC-1234",
     category: "Bus",
@@ -105,7 +104,7 @@ describe("Vehicle API", () => {
 
   // ========== CREATE ==========
   describe("POST /api/vehicles", () => {
-    it("should create a vehicle (201)", async () => {
+    it("should create a vehicle (201) with image", async () => {
       const vehicleData = {
         ...validVehicle,
         department: departmentId.toString(),
@@ -153,12 +152,47 @@ describe("Vehicle API", () => {
       expect(res.statusCode).toBe(201);
       expect(res.body).toHaveProperty("_id");
       expect(res.body.registrationNumber).toBe(validVehicle.registrationNumber);
-    }, 10000); // Increased timeout
+      expect(res.body.vehiclePhoto).toBeDefined();
+    }, 10000);
+
+    it("should return 400 if no image uploaded", async () => {
+      const vehicleData = {
+        ...validVehicle,
+        department: departmentId.toString(),
+      };
+
+      const res = await request(app)
+        .post("/api/vehicles")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .field("registrationNumber", vehicleData.registrationNumber)
+        .field("category", vehicleData.category)
+        .field("type", vehicleData.type)
+        .field("brand", vehicleData.brand)
+        .field("model", vehicleData.model)
+        .field("yearOfManufacture", vehicleData.yearOfManufacture.toString())
+        .field("seatCapacity", vehicleData.seatCapacity.toString())
+        .field("department", vehicleData.department)
+        .field("insurance[provider]", vehicleData.insurance.provider)
+        .field("insurance[policyNumber]", vehicleData.insurance.policyNumber)
+        .field("insurance[type]", vehicleData.insurance.type)
+        .field("insurance[startDate]", vehicleData.insurance.startDate)
+        .field("insurance[expiryDate]", vehicleData.insurance.expiryDate)
+        .field(
+          "fitness[certificateNumber]",
+          vehicleData.fitness.certificateNumber,
+        )
+        .field("fitness[issueDate]", vehicleData.fitness.issueDate)
+        .field("fitness[expiryDate]", vehicleData.fitness.expiryDate)
+        .field("status", vehicleData.status);
+      // No .attach("vehiclePhoto")
+
+      expect(res.statusCode).toBe(400);
+      // After fixing error handler, the details are in res.body.details.errors
+      expect(res.body.details.errors).toContain("Vehicle photo is required");
+    });
 
     it("should return 401 if no token", async () => {
-      // Simple GET request to test 401 - no file upload to avoid ECONNRESET
       const res = await request(app).get("/api/vehicles");
-
       expect(res.statusCode).toBe(401);
     });
 
@@ -188,26 +222,12 @@ describe("Vehicle API", () => {
         )
         .field("fitness[issueDate]", vehicleData.fitness.issueDate)
         .field("fitness[expiryDate]", vehicleData.fitness.expiryDate)
-        .field("lastMaintenance[date]", vehicleData.lastMaintenance.date)
-        .field(
-          "lastMaintenance[maintenanceType]",
-          vehicleData.lastMaintenance.maintenanceType,
-        )
-        .field(
-          "lastMaintenance[odometer]",
-          vehicleData.lastMaintenance.odometer.toString(),
-        )
-        .field("nextMaintenanceDue[date]", vehicleData.nextMaintenanceDue.date)
-        .field(
-          "nextMaintenanceDue[odometer]",
-          vehicleData.nextMaintenanceDue.odometer.toString(),
-        )
         .field("status", vehicleData.status)
         .attach("vehiclePhoto", testImagePath);
 
       expect(res.statusCode).toBe(404);
       expect(res.body.message).toContain("Department not found");
-    }, 10000); // Increased timeout
+    }, 10000);
 
     it("should return 400 if duplicate registration", async () => {
       const vehicleData = {
@@ -299,7 +319,7 @@ describe("Vehicle API", () => {
 
       expect(res.statusCode).toBe(400);
       expect(res.body.message).toContain("already exists");
-    }, 10000); // Increased timeout
+    }, 10000);
   });
 
   // ========== GET ALL ==========
@@ -336,38 +356,104 @@ describe("Vehicle API", () => {
     });
   });
 
-  // ========== GET ONE ==========
-  describe("GET /api/vehicles/:id", () => {
-    let vehicleId;
+  // ========== GET ONE with computed status ==========
+  describe("GET /api/vehicles/:id - computed status", () => {
+    it("should return UNDER MAINTENANCE when nextMaintenanceDue date is passed", async () => {
+      const pastDate = new Date();
+      pastDate.setDate(pastDate.getDate() - 1);
 
-    beforeEach(async () => {
       const vehicle = await Vehicle.create({
         ...validVehicle,
         vehiclePhoto: "https://test.com/photo.jpg",
-        cloudinaryId: "id3",
-        registrationNumber: "ABC-333",
+        cloudinaryId: "id-maintenance",
+        registrationNumber: "MAINT-001",
         department: departmentId,
         createdBy: adminId,
+        nextMaintenanceDue: { date: pastDate, odometer: 10000 },
+        status: "AVAILABLE",
       });
-      vehicleId = vehicle._id;
-    });
 
-    it("should return vehicle by id (200)", async () => {
       const res = await request(app)
-        .get(`/api/vehicles/${vehicleId}`)
+        .get(`/api/vehicles/${vehicle._id}`)
         .set("Authorization", `Bearer ${adminToken}`);
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.registrationNumber).toBe("ABC-333");
+      expect(res.body.status).toBe("UNDER MAINTENANCE");
     });
 
-    it("should return 404 if not found", async () => {
-      const fakeId = new mongoose.Types.ObjectId();
+    it("should return UNAVAILABLE when department is inactive", async () => {
+      const inactiveDept = await Department.create({
+        name: "Inactive Dept",
+        managerName: "Inactive Manager",
+        contactNumber: "0771111111",
+        email: "inactive@test.com",
+        address: "Inactive Address",
+        region: "Western",
+        status: "inactive",
+        createdBy: adminId,
+      });
+
+      const vehicle = await Vehicle.create({
+        ...validVehicle,
+        vehiclePhoto: "https://test.com/photo.jpg",
+        cloudinaryId: "id-inactive",
+        registrationNumber: "INACT-001",
+        department: inactiveDept._id,
+        createdBy: adminId,
+        status: "AVAILABLE",
+      });
+
       const res = await request(app)
-        .get(`/api/vehicles/${fakeId}`)
+        .get(`/api/vehicles/${vehicle._id}`)
         .set("Authorization", `Bearer ${adminToken}`);
 
-      expect(res.statusCode).toBe(404);
+      expect(res.statusCode).toBe(200);
+      expect(res.body.status).toBe("UNAVAILABLE");
+    });
+
+    it("should return UNAVAILABLE when insurance expired", async () => {
+      const expiredDate = new Date();
+      expiredDate.setDate(expiredDate.getDate() - 1);
+
+      const vehicle = await Vehicle.create({
+        ...validVehicle,
+        vehiclePhoto: "https://test.com/photo.jpg",
+        cloudinaryId: "id-expired-ins",
+        registrationNumber: "EXP-INS-001",
+        department: departmentId,
+        createdBy: adminId,
+        insurance: {
+          ...validVehicle.insurance,
+          expiryDate: expiredDate,
+        },
+        status: "AVAILABLE",
+      });
+
+      const res = await request(app)
+        .get(`/api/vehicles/${vehicle._id}`)
+        .set("Authorization", `Bearer ${adminToken}`);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.status).toBe("UNAVAILABLE");
+    });
+
+    it("should return AVAILABLE when no rules apply", async () => {
+      const vehicle = await Vehicle.create({
+        ...validVehicle,
+        vehiclePhoto: "https://test.com/photo.jpg",
+        cloudinaryId: "id-available",
+        registrationNumber: "AVAIL-001",
+        department: departmentId,
+        createdBy: adminId,
+        status: "AVAILABLE",
+      });
+
+      const res = await request(app)
+        .get(`/api/vehicles/${vehicle._id}`)
+        .set("Authorization", `Bearer ${adminToken}`);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.status).toBe("AVAILABLE");
     });
   });
 

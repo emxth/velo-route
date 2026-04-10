@@ -20,6 +20,10 @@ export const validateVehicle = (req, res, next) => {
 
   if (req.method === "POST") {
     // Required fields for POST
+    if (!req.file) {
+      errors.push("Vehicle photo is required");
+    }
+
     if (!registrationNumber || !/^[A-Z0-9-]+$/.test(registrationNumber)) {
       errors.push(
         "Registration number is required and can only contain uppercase letters, numbers, and hyphens",

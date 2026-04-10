@@ -39,12 +39,15 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests
-  message: "Too many requests from this IP",
-});
-app.use("/api", limiter);
+if (process.env.NODE_ENV === "production") {
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // strict in production
+    message: "Too many requests from this IP",
+  });
+
+  app.use("/api", limiter);
+}
 
 app.use(express.json());
 if (process.env.NODE_ENV !== "production") app.use(morgan("dev"));
@@ -77,9 +80,7 @@ app.use(errorHandler);
 const port = process.env.PORT || 5000;
 
 if (process.env.NODE_ENV !== "test") {
-  app.listen(port, () =>
-    console.log(`Server running on port ${port}`)
-  );
+  app.listen(port, () => console.log(`Server running on port ${port}`));
 }
 
 /* ===========================
