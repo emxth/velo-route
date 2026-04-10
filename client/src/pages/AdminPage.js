@@ -6,7 +6,7 @@ const NAV_PREVIEW = {
   operator: ["dashboard", "operator"],
   driver: ["dashboard", "driver"],
   analyst: ["dashboard", "analyst"],
-  user: ["dashboard"],
+  user: ["dashboard", "schedules"],
 };
 
 const ROLES = ["admin", "operator", "driver", "analyst", "user"];
