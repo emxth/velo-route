@@ -30,6 +30,24 @@ const NAV_GROUPS = [
       { key: "complaints", label: "View Complaints", to: "/complaints", public: true },
     ],
   },
+  {
+    category: "Route & Schedule Management",
+    items: [{ key: "dashboard", label: "Dashboard", to: "/admin/dashboard" }],
+  },
+  {
+    category: "Route & Schedule Management",
+    items: [{
+      key: "routes", label: "Manage Routes", to: "/admin/routes"
+    },
+    {
+      key: "schedules", label: "Manage Schedules", to: "/admin/schedules"
+    },
+    {
+      key: "add-route", label: "Quick Add Route", to: "/admin/routes?action=add"
+    },
+
+    ],
+  },
 
 ];
 
