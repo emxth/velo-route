@@ -1,4 +1,3 @@
-// components/ScheduleFilters.jsx
 import { format } from "date-fns";
 
 const ScheduleFilters = ({ 
