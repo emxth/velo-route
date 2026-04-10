@@ -4,24 +4,95 @@ import { ChevronDown, X, AlertCircle, CheckCircle } from 'lucide-react';
 import api from '../api/axios';
 
 // Seat Selection Modal Component
-const SeatSelectionModal = ({ isOpen, onClose, onSelectSeats, transportType, selectedSeats, occupiedSeats = [] }) => {
+const SeatSelectionModal = ({ isOpen, onClose, onSelectSeats, transportType, selectedSeats, occupiedSeats = [], seatCapacity }) => {
   const [localSelectedSeats, setLocalSelectedSeats] = useState(selectedSeats || []);
+
+  const safeSeatCapacity = Number.isFinite(Number(seatCapacity)) && Number(seatCapacity) > 0
+    ? Number(seatCapacity)
+    : null;
 
   useEffect(() => {
     if (!isOpen) {
       return;
     }
 
-    const nextSelected = (selectedSeats || []).filter((seat) => !occupiedSeats.includes(seat));
-    setLocalSelectedSeats(nextSelected);
-  }, [isOpen, selectedSeats, occupiedSeats]);
-  
-  // Define seat layout based on transport type
-  const seatLayout = transportType === 'TRAIN' 
-    ? { rows: 6, cols: 5 } // 30 seats for train (reduced from 48)
-    : { rows: 8, cols: 4 }; // 32 seats for bus (reduced from 48)
+    const nextSelected = (selectedSeats || []).filter((seat) => {
+      if (occupiedSeats.includes(seat)) {
+        return false;
+      }
 
-  const totalSeats = seatLayout.rows * seatLayout.cols;
+      if (safeSeatCapacity && seat > safeSeatCapacity) {
+        return false;
+      }
+
+      return true;
+    });
+    setLocalSelectedSeats(nextSelected);
+  }, [isOpen, selectedSeats, occupiedSeats, safeSeatCapacity]);
+  
+  const isBus = transportType === 'BUS';
+  const fallbackColumns = 5;
+  const fallbackSeatCount = transportType === 'TRAIN' ? 30 : 32;
+  const totalSeats = safeSeatCapacity || fallbackSeatCount;
+  const seatLayout = {
+    cols: fallbackColumns,
+    rows: Math.ceil(totalSeats / fallbackColumns),
+  };
+
+  const buildBusRows = (seatCount) => {
+    const rows = [];
+    if (seatCount <= 6) {
+      rows.push({
+        seats: Array.from({ length: seatCount }, (_, index) => index + 1),
+        leftCount: 0,
+        isLastRow: true,
+      });
+      return rows;
+    }
+
+    const seatsBeforeLastRow = seatCount - 6;
+    let nextSeat = 1;
+    const splitRowsLimit = 9;
+    const splitRowSeatCount = 5;
+    const rightOnlySeatCount = 3;
+    const splitRowsCount = Math.min(splitRowsLimit, Math.ceil(seatsBeforeLastRow / splitRowSeatCount));
+
+    for (let rowIndex = 0; rowIndex < splitRowsCount && nextSeat <= seatsBeforeLastRow; rowIndex += 1) {
+      const remainingBeforeLastRow = seatsBeforeLastRow - nextSeat + 1;
+      const rowSeatCount = Math.min(splitRowSeatCount, remainingBeforeLastRow);
+
+      rows.push({
+        seats: Array.from({ length: rowSeatCount }, (_, offset) => nextSeat + offset),
+        leftCount: Math.min(2, rowSeatCount),
+        isSplitRow: true,
+      });
+
+      nextSeat += rowSeatCount;
+    }
+
+    while (nextSeat <= seatsBeforeLastRow) {
+      const remainingBeforeLastRow = seatsBeforeLastRow - nextSeat + 1;
+      const rowSeatCount = Math.min(rightOnlySeatCount, remainingBeforeLastRow);
+
+      rows.push({
+        seats: Array.from({ length: rowSeatCount }, (_, offset) => nextSeat + offset),
+        leftCount: 0,
+        isRightOnlyRow: true,
+      });
+
+      nextSeat += rowSeatCount;
+    }
+
+    rows.push({
+      seats: Array.from({ length: 6 }, (_, offset) => nextSeat + offset),
+      leftCount: 2,
+      isLastRow: true,
+    });
+
+    return rows;
+  };
+
+  const busRows = isBus ? buildBusRows(totalSeats) : [];
   // Handle seat click
   const toggleSeat = (seatNumber) => {
     setLocalSelectedSeats(prev => 
@@ -104,12 +175,62 @@ const SeatSelectionModal = ({ isOpen, onClose, onSelectSeats, transportType, sel
 
           {/* Seat Grid */}
           <div className="bg-gray-50 p-3 rounded-lg mb-5">
-            <div
-              className={`grid gap-1 justify-center`}
-              style={{ gridTemplateColumns: `repeat(${seatLayout.cols}, minmax(0, 1fr))` }}
-            >
-              {Array.from({ length: totalSeats }, (_, i) => renderSeat(i + 1))}
-            </div>
+            {isBus ? (
+              <div className="space-y-2">
+                {busRows.map((row, rowIndex) => {
+                  const leftCount = row.leftCount || 2;
+                  const leftSeats = row.seats.slice(0, leftCount);
+                  const rightSeats = row.seats.slice(leftCount);
+
+                  let rowContent;
+
+                  if (row.isLastRow && row.seats.length === 6) {
+                    rowContent = (
+                      <div className="grid grid-cols-6 gap-1">
+                        {row.seats.map((seatNumber) => renderSeat(seatNumber))}
+                      </div>
+                    );
+                  } else if (row.isRightOnlyRow) {
+                    rowContent = (
+                      <div className="flex justify-center w-full">
+                        <div className="flex items-center gap-5">
+                          <div className="flex gap-1 min-w-[3.5rem] justify-center">
+                            <div className="w-6 h-6" aria-hidden="true"></div>
+                          </div>
+                          <div className="flex gap-1 min-w-[5.5rem] justify-center">
+                            {row.seats.map((seatNumber) => renderSeat(seatNumber))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  } else {
+                    rowContent = (
+                      <div className="flex items-center gap-5">
+                        <div className="flex gap-1 min-w-[3.5rem] justify-center">
+                          {leftSeats.map((seatNumber) => renderSeat(seatNumber))}
+                        </div>
+                        <div className="flex gap-1 min-w-[5.5rem] justify-center">
+                          {rightSeats.map((seatNumber) => renderSeat(seatNumber))}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div key={`row-${rowIndex}`} className="flex justify-center">
+                      {rowContent}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div
+                className="grid gap-1 justify-center"
+                style={{ gridTemplateColumns: `repeat(${seatLayout.cols}, minmax(0, 1fr))` }}
+              >
+                {Array.from({ length: totalSeats }, (_, i) => renderSeat(i + 1))}
+              </div>
+            )}
           </div>
 
           {/* Selected Seats Info */}
@@ -825,10 +946,10 @@ const AddBooking = () => {
             </button>
           </form>
 
-          <div className="space-y-6 lg:sticky lg:top-6">
-            <aside className="bg-slate-900 text-slate-100 rounded-2xl shadow-xl p-6">
-              <h3 className="text-lg font-semibold mb-4">Booking Summary</h3>
-              <div className="space-y-3 text-sm">
+          <div className="space-y-4 lg:sticky lg:top-2">
+            <aside className="bg-slate-900 text-slate-100 rounded-2xl shadow-xl p-5">
+              <h3 className="text-base font-semibold mb-3 text-cyan-300">Booking Summary</h3>
+              <div className="space-y-2.5 text-sm">
                 <div className="flex justify-between gap-3">
                   <span className="text-slate-300">Transport</span>
                   <span className="font-medium">{formData.transportType}</span>
@@ -848,15 +969,15 @@ const AddBooking = () => {
                   </span>
                 </div>
               </div>
-              <div className="border-t border-slate-700 mt-5 pt-5">
+              <div className="border-t border-slate-700 mt-4 pt-4">
                 <p className="text-slate-300 text-sm mb-1">Estimated Total</p>
                 <p className="text-3xl font-bold">Rs {formData.amount}</p>
               </div>
             </aside>
 
-            <aside className="bg-slate-900 text-slate-100 rounded-2xl shadow-xl p-6">
-              <h3 className="text-lg font-semibold mb-4">Vehicle Details</h3>
-              <div className="space-y-3 text-sm">
+            <aside className="bg-slate-900 text-slate-100 rounded-2xl shadow-xl p-5">
+              <h3 className="text-base font-semibold mb-3 text-cyan-300">Vehicle Details</h3>
+              <div className="space-y-2.5 text-sm">
                 <div className="flex justify-between gap-3">
                   <span className="text-slate-300">Category</span>
                   <span className="font-medium">{vehicleDetails?.category || (formData.transportType === 'TRAIN' ? 'Train' : 'Bus')}</span>
@@ -897,9 +1018,9 @@ const AddBooking = () => {
                   </>
                 )}
               </div>
-              <div className="border-t border-slate-700 mt-5 pt-5">
+              <div className="border-t border-slate-700 mt-4 pt-4">
                 <p className="text-slate-300 text-sm mb-1">Availability Status</p>
-                <p className="text-xl font-bold">{vehicleDetails?.status || 'N/A'}</p>
+                <p className="text-lg font-bold">{vehicleDetails?.status || 'N/A'}</p>
               </div>
             </aside>
           </div>
@@ -914,6 +1035,7 @@ const AddBooking = () => {
         transportType={formData.transportType}
         selectedSeats={formData.seatNumbers}
         occupiedSeats={occupiedSeats}
+        seatCapacity={vehicleDetails?.seatCapacity}
       />
     </div>
   );
