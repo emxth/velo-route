@@ -130,8 +130,40 @@ export const createBooking = async (userId, data) => {
   return booking;
 };
 
-export const getMyBookings = (userId) =>
-  bookingRepo.findByPassenger(userId);
+export const getMyBookings = async (userId) => {
+  const bookings = await bookingRepo.findByPassenger(userId);
+
+  if (!bookings || bookings.length === 0) {
+    return bookings;
+  }
+
+  const tripIds = bookings
+    .map((b) => b.tripId)
+    .filter(Boolean);
+
+  if (tripIds.length === 0) {
+    return bookings;
+  }
+
+  const schedules = await Schedule.find({ _id: { $in: tripIds } })
+    .populate("vehicleID", "registrationNumber")
+    .lean();
+
+  const scheduleMap = new Map(
+    schedules.map((s) => [s._id.toString(), s]),
+  );
+
+  return bookings.map((booking) => {
+    const plain = booking.toObject ? booking.toObject() : booking;
+    const schedule = scheduleMap.get(String(booking.tripId));
+    const registrationNumber = schedule?.vehicleID?.registrationNumber || null;
+
+    return {
+      ...plain,
+      vehicleRegistrationNumber: registrationNumber,
+    };
+  });
+};
 
 export const getAllBookings = () =>
   bookingRepo.findAll();
@@ -160,7 +192,9 @@ export const getOccupiedSeats = async ({ tripId, transportType, fromLocation, to
     }
   }
 
-  return Array.from(occupiedSeatSet).sort((a, b) => a - b);
+  const result = Array.from(occupiedSeatSet).sort((a, b) => a - b);
+  
+  return result;
 };
 
 const TWENTY_FOUR_HOURS_IN_MS = 24 * 60 * 60 * 1000;

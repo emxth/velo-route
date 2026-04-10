@@ -62,6 +62,7 @@ export const findConflictingSeats = ({ tripId, transportType, fromLocation, toLo
 export const findOccupiedSeats = ({ tripId, transportType, fromLocation, toLocation, departureTime, excludeBookingId }) => {
     const departureTimeQuery = buildDepartureTimeSlotQuery(departureTime);
     if (!departureTimeQuery) {
+        console.warn('Invalid departureTime, returning empty result:', departureTime);
         return Promise.resolve([]);
     }
 
@@ -78,7 +79,10 @@ export const findOccupiedSeats = ({ tripId, transportType, fromLocation, toLocat
         query._id = { $ne: excludeBookingId };
     }
 
-    return Booking.find(query, { seatNumbers: 1, _id: 0 });
+    return Booking.find(query, { seatNumbers: 1, _id: 0 })
+        .then(results => {
+            return results;
+        });
 };
 
 export const deleteById = (bookingId) => Booking.findByIdAndDelete(bookingId);

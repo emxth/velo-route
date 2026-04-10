@@ -108,20 +108,42 @@ const ViewBookings = () => {
         }
     };
 
-    // Handle delete booking
+    // Handle delete booking - cancels first if PENDING, then deletes and refreshes list
     const handleDeleteBooking = async (bookingId) => {
-        if (!window.confirm('Are you sure you want to delete this booking?')) {
+        const booking = bookings.find(b => b._id === bookingId);
+        const isPending = booking?.bookingStatus === 'PENDING';
+        const isUnpaid = booking?.paymentStatus === 'UNPAID';
+        
+        const confirmMsg = isPending && isUnpaid 
+            ? 'Are you sure you want to cancel this booking? This will free up the seat(s).'
+            : 'Are you sure you want to delete this booking?';
+        
+        if (!window.confirm(confirmMsg)) {
             return;
         }
 
         try {
             setDeleteLoading(bookingId);
+            
+            // If PENDING + UNPAID, first cancel the booking to mark it as CANCELLED and free up seats
+            if (isPending && isUnpaid) {
+                console.log('Cancelling PENDING+UNPAID booking:', bookingId);
+                await api.patch(`/bookings/${bookingId}/cancel`);
+            }
+            
+            // Then delete the booking completely
+            console.log('Deleting booking:', bookingId);
             await api.delete(`/bookings/${bookingId}`);
-            setBookings(bookings.filter(b => b._id !== bookingId));
-            alert('Booking deleted successfully');
+            
+            // Refresh bookings from server so UI is always up-to-date
+            await fetchBookings();
+
+            alert(isPending && isUnpaid 
+                ? 'Booking cancelled successfully. Seat(s) are now available for other passengers.' 
+                : 'Booking deleted successfully');
         } catch (err) {
-            console.error('Error deleting booking:', err);
-            alert(err.response?.data?.message || 'Failed to delete booking');
+            console.error('Error handling booking:', err);
+            alert(err.response?.data?.message || 'Failed to process booking. Please try again.');
         } finally {
             setDeleteLoading(null);
         }
@@ -363,10 +385,12 @@ const ViewBookings = () => {
                                     </div>
                                 </div>
 
-                                {/* Trip ID */}
+                                {/* Vehicle Number (replaces Trip ID) */}
                                 <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                    <p className="text-xs text-gray-500 font-semibold uppercase mb-1">Trip ID</p>
-                                    <p className="text-sm font-mono text-gray-800 break-all">{booking.tripId}</p>
+                                    <p className="text-xs text-gray-500 font-semibold uppercase mb-1">Vehicle No</p>
+                                    <p className="text-sm font-mono text-gray-800 break-all">
+                                        {booking.vehicleRegistrationNumber || 'N/A'}
+                                    </p>
                                 </div>
 
                                 {/* Meta Info */}
@@ -431,7 +455,7 @@ const ViewBookings = () => {
                                         </button>
                                     )}
 
-                                    {/* Delete Button - If CANCELLED or PENDING + not PAID */}
+                                    {/* Delete Button - If CANCELLED or PENDING + UNPAID */}
                                     {(isCancelled || (isPending && !isPaid)) && (
                                         <button
                                             onClick={() => handleDeleteBooking(booking._id)}
@@ -439,7 +463,7 @@ const ViewBookings = () => {
                                             className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             <Trash2 size={16} />
-                                            {deleteLoading === booking._id ? 'Deleting...' : 'Delete'}
+                                            {deleteLoading === booking._id ? 'Processing...' : (isPending && !isPaid ? 'Cancel & Delete' : 'Delete')}
                                         </button>
                                     )}
                                             </>
