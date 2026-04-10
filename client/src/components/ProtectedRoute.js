@@ -9,6 +9,7 @@ const PATH_KEY_MAP = {
   "/operator": "operator",
   "/driver": "driver",
   "/analyst": "analyst",
+  "/schedules": "schedules",
 };
 
 const ProtectedRoute = ({ roles }) => {
