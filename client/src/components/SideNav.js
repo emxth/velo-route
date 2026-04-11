@@ -18,7 +18,7 @@ const NAV_GROUPS = [
     items: [{ key: "analyst", label: "Analyst Area", to: "/analyst" }],
   },
   {
-    category: "Schedule & Routes",
+    category: "Trip Information",
     items: [
       { key: "schedules", label: "Trip Finder", to: "/schedules", public: true },
     ]
@@ -32,18 +32,18 @@ const NAV_GROUPS = [
   },
   {
     category: "Route & Schedule Management",
-    items: [{ key: "dashboard", label: "Dashboard", to: "/admin/dashboard" }],
+    items: [{ key: "admin", label: "Dashboard", to: "/admin/dashboard" }],
   },
   {
     category: "Route & Schedule Management",
     items: [{
-      key: "routes", label: "Manage Routes", to: "/admin/routes"
+      key: "admin", label: "Manage Routes", to: "/admin/routes"
     },
     {
-      key: "schedules", label: "Manage Schedules", to: "/admin/schedules"
+      key: "admin", label: "Manage Schedules", to: "/admin/schedules"
     },
     {
-      key: "add-route", label: "Quick Add Route", to: "/admin/routes?action=add"
+      key: "admin", label: "Quick Add Route", to: "/admin/routes?action=add"
     },
 
     ],
