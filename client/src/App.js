@@ -66,9 +66,9 @@ function App() {
               <Route path="/analyst" element={<AnalystPage />} />
             </Route>
 
-            <Route element={<ProtectedRoute />}>
-              <Route path="/schedules" element={<SchedulePage />} />
-            </Route>
+
+            <Route path="/schedules" element={<SchedulePage />} />
+
 
             <Route path="/complaints" element={<ComplaintsPage />} />
             <Route path="/complaints/:id" element={<ComplaintDetailPage />} />
