@@ -21,10 +21,10 @@ const ViewBookings = () => {
     const [toast, setToast] = useState(null);
 
     // Filters
-    const [statusFilter, setStatusFilter] = useState('ALL'); // ALL | PENDING | CONFIRMED | CANCELLED
-    const [timeFilter, setTimeFilter] = useState('ALL'); // ALL | UPCOMING | PAST
-    const [paymentFilter, setPaymentFilter] = useState('ALL'); // ALL | UNPAID | PAID | REFUNDED
-    const [transportFilter, setTransportFilter] = useState('ALL'); // ALL | BUS | TRAIN
+    const [statusFilter, setStatusFilter] = useState('ALL'); // ALL, PENDING, CONFIRMED, CANCELLED
+    const [timeFilter, setTimeFilter] = useState('ALL'); // ALL, UPCOMING,PAST
+    const [paymentFilter, setPaymentFilter] = useState('ALL'); // ALL, UNPAID, PAID, REFUNDED
+    const [transportFilter, setTransportFilter] = useState('ALL'); // ALL, BUS, TRAIN
 
     // Fetch user's bookings on component mount
     useEffect(() => {
@@ -123,7 +123,7 @@ const ViewBookings = () => {
         }
     };
 
-    // Handle update booking (redirect to edit page)
+    // Handle update booking - redirect to edit page
     const handleUpdateBooking = (bookingId) => {
         navigate(`/updateBooking/${bookingId}`);
     };
