@@ -133,7 +133,7 @@ const ScheduleTable = ({ schedules }) => {
                       {schedule.vehicleID?.registrationNumber || "N/A"}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {schedule.vehicleID?.type || ""}
+                      {schedule.vehicleID?.category || ""}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

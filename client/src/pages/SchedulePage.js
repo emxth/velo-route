@@ -23,6 +23,7 @@ const SchedulePage = () => {
         endDestination: "",
         arrivalTime: "",
         date: "",
+        vehicleType: "",
     });
 
     // Fetch all schedules once
@@ -53,20 +54,28 @@ const SchedulePage = () => {
         const routes = new Set();
         const startDestinations = new Set();
         const endDestinations = new Set();
+        const vehicleTypes = new Set();
 
         allSchedules.forEach(schedule => {
             const route = schedule.routeId;
+            const vehicle = schedule.vehicleID;
+
             if (route) {
                 if (route.name) routes.add(route.name);
                 if (route.startLocation?.name) startDestinations.add(route.startLocation.name);
                 if (route.endLocation?.name) endDestinations.add(route.endLocation.name);
+            }
+
+            if (vehicle && vehicle.category) {
+                vehicleTypes.add(vehicle.category);
             }
         });
 
         return {
             routes: Array.from(routes).sort(),
             startDestinations: Array.from(startDestinations).sort(),
-            endDestinations: Array.from(endDestinations).sort()
+            endDestinations: Array.from(endDestinations).sort(),
+            vehicleTypes: Array.from(vehicleTypes).sort()
         };
     }, [allSchedules]);
 
@@ -92,6 +101,13 @@ const SchedulePage = () => {
         if (filters.endDestination) {
             filtered = filtered.filter(schedule =>
                 schedule.routeId?.endLocation?.name?.toLowerCase().includes(filters.endDestination.toLowerCase())
+            );
+        }
+
+        // Filter by vehicle type
+        if (filters.vehicleType) {
+            filtered = filtered.filter(schedule =>
+                schedule.vehicleID?.category?.toLowerCase() === filters.vehicleType.toLowerCase()
             );
         }
 
@@ -144,7 +160,8 @@ const SchedulePage = () => {
             startDestination: "",
             endDestination: "",
             arrivalTime: "",
-            date: ""
+            date: "",
+            vehicleType: ""
         });
     };
 

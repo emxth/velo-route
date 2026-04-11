@@ -1,4 +1,3 @@
-// components/ScheduleErrorState.jsx
 const ScheduleErrorState = ({ error, onRetry }) => {
   return (
     <div className="flex items-center justify-center min-h-screen">

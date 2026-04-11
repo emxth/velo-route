@@ -1,4 +1,3 @@
-// components/ScheduleFilters.jsx
 import { format } from "date-fns";
 
 const ScheduleFilters = ({ 
@@ -9,7 +8,7 @@ const ScheduleFilters = ({
 }) => {
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2  gap-4">
         <div>
           <label className="block text-sm font-semibold mb-2 text-neutral-700">
             Route
@@ -57,6 +56,23 @@ const ScheduleFilters = ({
             <option value="">All Destinations</option>
             {filterOptions.endDestinations.map(dest => (
               <option key={dest} value={dest}>{dest}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold mb-2 text-neutral-700">
+            Vehicle Type
+          </label>
+          <select
+            name="vehicleType"
+            value={filters.vehicleType}
+            onChange={onFilterChange}
+            className="input-field w-full"
+          >
+            <option value="">All Vehicle Types</option>
+            {filterOptions.vehicleTypes.map(type => (
+              <option key={type} value={type}>{type}</option>
             ))}
           </select>
         </div>
