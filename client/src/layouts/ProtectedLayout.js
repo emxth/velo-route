@@ -5,7 +5,13 @@ import api from "../api/axios";
 import SideNav from "../components/SideNav";
 
 // Add User default navigations here (if not set, will fallback to these based on role)
-const ADMIN_DEFAULT_NAV = ["admin", "operator", "driver", "analyst"];
+const ADMIN_DEFAULT_NAV = [
+  "admin",
+  "operator",
+  "driver",
+  "analyst",
+  "dashboard",
+];
 const USER_DEFAULT_NAV = [];
 
 const ProtectedLayout = () => {
@@ -17,12 +23,18 @@ const ProtectedLayout = () => {
     const load = async () => {
       try {
         const { data } = await api.get("/users/me/permissions");
-        const fallback = user?.role === "admin" ? ADMIN_DEFAULT_NAV : USER_DEFAULT_NAV;
-        const incoming = data.allowedNav && data.allowedNav.length ? data.allowedNav : fallback;
+        console.log("Permissions API response:", data);
+        const fallback =
+          user?.role === "admin" ? ADMIN_DEFAULT_NAV : USER_DEFAULT_NAV;
+        const incoming =
+          data.allowedNav && data.allowedNav.length
+            ? data.allowedNav
+            : fallback;
         if (mounted) setAllowedNav(incoming);
       } catch (err) {
         console.error("Failed to load permissions", err);
-        const fallback = user?.role === "admin" ? ADMIN_DEFAULT_NAV : USER_DEFAULT_NAV;
+        const fallback =
+          user?.role === "admin" ? ADMIN_DEFAULT_NAV : USER_DEFAULT_NAV;
         if (mounted) setAllowedNav(fallback);
       }
     };

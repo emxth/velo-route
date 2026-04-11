@@ -7,18 +7,23 @@ import Toast from "../../components/Toast";
 const AllVehiclesPage = () => {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [loadingDepts, setLoadingDepts] = useState(false);
   const [toast, setToast] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [departmentMap, setDepartmentMap] = useState({});
   const itemsPerPage = 10;
 
-  // Helper to get effective status (mirroring backend logic)
+  // Filter states
+  const [searchRegNo, setSearchRegNo] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+
+  // Effective status logic (mirrors backend)
   const getEffectiveStatus = (vehicle) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // 1. Insurance or fitness expired → UNAVAILABLE
+    if (vehicle.departmentDetails?.status === "inactive") return "UNAVAILABLE";
+
     const insuranceExpiry = vehicle.insurance?.expiryDate
       ? new Date(vehicle.insurance.expiryDate)
       : null;
@@ -29,7 +34,6 @@ const AllVehiclesPage = () => {
     if (insuranceExpiry && insuranceExpiry <= today) return "UNAVAILABLE";
     if (fitnessExpiry && fitnessExpiry <= today) return "UNAVAILABLE";
 
-    // 2. Next maintenance due date passed → UNDER MAINTENANCE
     const nextMaintenanceDate = vehicle.nextMaintenanceDue?.date
       ? new Date(vehicle.nextMaintenanceDue.date)
       : null;
@@ -37,7 +41,6 @@ const AllVehiclesPage = () => {
       return "UNDER MAINTENANCE";
     }
 
-    // 3. Otherwise keep the stored status
     return vehicle.status || "AVAILABLE";
   };
 
@@ -64,46 +67,13 @@ const AllVehiclesPage = () => {
     }
   };
 
-  // Fetch vehicles and then fetch department names for IDs found in response
+  // Fetch all vehicles
   useEffect(() => {
     const fetchVehicles = async () => {
       setLoading(true);
       try {
         const res = await api.get("/vehicles", { params: { limit: 1000 } });
-        const vehiclesData = res.data.data;
-        setVehicles(vehiclesData);
-
-        // Collect unique department IDs (strings) from vehicles that have a department field
-        const deptIds = [];
-        vehiclesData.forEach((v) => {
-          // Check if department exists and is a string (ID) and we don't already have its name
-          if (
-            v.department &&
-            typeof v.department === "string" &&
-            !departmentMap[v.department]
-          ) {
-            deptIds.push(v.department);
-          }
-        });
-        const uniqueDeptIds = [...new Set(deptIds)];
-        if (uniqueDeptIds.length > 0) {
-          setLoadingDepts(true);
-          try {
-            const promises = uniqueDeptIds.map((id) =>
-              api.get(`/departments/${id}`),
-            );
-            const deptResponses = await Promise.all(promises);
-            const deptMap = {};
-            deptResponses.forEach((resp, idx) => {
-              deptMap[uniqueDeptIds[idx]] = resp.data.name;
-            });
-            setDepartmentMap((prev) => ({ ...prev, ...deptMap }));
-          } catch (err) {
-            console.error("Failed to fetch department names", err);
-          } finally {
-            setLoadingDepts(false);
-          }
-        }
+        setVehicles(res.data.data);
       } catch (err) {
         setToast({ message: "Failed to load vehicles", type: "error" });
       } finally {
@@ -113,27 +83,51 @@ const AllVehiclesPage = () => {
     fetchVehicles();
   }, []);
 
-  // Helper to get department name from vehicle object
-  const getDepartmentName = (vehicle) => {
-    // If department is already an object with name
-    if (vehicle.department?.name) return vehicle.department.name;
-    // If department is an ID string and we have fetched its name
-    if (
-      typeof vehicle.department === "string" &&
-      departmentMap[vehicle.department]
-    ) {
-      return departmentMap[vehicle.department];
+  // Apply all filters
+  const filteredVehicles = useMemo(() => {
+    let result = [...vehicles];
+
+    if (searchRegNo.trim()) {
+      const searchLower = searchRegNo.trim().toLowerCase();
+      result = result.filter((v) =>
+        v.registrationNumber?.toLowerCase().includes(searchLower),
+      );
     }
-    // If department is missing altogether
-    return "—";
+
+    if (filterCategory) {
+      result = result.filter((v) => v.category === filterCategory);
+    }
+
+    if (filterType) {
+      result = result.filter((v) => v.type === filterType);
+    }
+
+    if (filterStatus) {
+      result = result.filter((v) => getEffectiveStatus(v) === filterStatus);
+    }
+
+    return result;
+  }, [vehicles, searchRegNo, filterCategory, filterType, filterStatus]);
+
+  // Reset all filters
+  const resetFilters = () => {
+    setSearchRegNo("");
+    setFilterCategory("");
+    setFilterType("");
+    setFilterStatus("");
+    setCurrentPage(1);
   };
 
   // Pagination
-  const totalPages = Math.ceil(vehicles.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredVehicles.length / itemsPerPage);
   const paginatedVehicles = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
-    return vehicles.slice(start, start + itemsPerPage);
-  }, [vehicles, currentPage]);
+    return filteredVehicles.slice(start, start + itemsPerPage);
+  }, [filteredVehicles, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchRegNo, filterCategory, filterType, filterStatus]);
 
   if (loading)
     return (
@@ -143,7 +137,7 @@ const AllVehiclesPage = () => {
     );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {toast && (
         <Toast
           message={toast.message}
@@ -152,18 +146,22 @@ const AllVehiclesPage = () => {
         />
       )}
 
-      {/* Header */}
-      <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+      {/* Header with gradient title (like departments page) */}
+      <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Vehicle Fleet</h1>
-          <p className="text-neutral-500 text-sm mt-1">Manage your fleet</p>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-700 to-primary-500 bg-clip-text text-transparent">
+            Vehicles
+          </h1>
+          <p className="text-neutral-500 text-sm mt-1">
+            Manage and oversee all vehicles here
+          </p>
         </div>
         <Link
           to="/vehicles/add"
-          className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition flex items-center gap-2"
+          className="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-md transition-all duration-200 flex items-center gap-2"
         >
           <svg
-            className="w-4 h-4"
+            className="w-5 h-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -179,12 +177,89 @@ const AllVehiclesPage = () => {
         </Link>
       </div>
 
-      {loadingDepts && (
-        <div className="text-center text-sm text-neutral-500 mb-2">
-          Loading department names...
+      {/* Filter Bar – one line with reset button on the right (like departments page) */}
+      <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6 mb-10">
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-sm font-semibold text-neutral-700 mb-1.5">
+              Search by Registration Number
+            </label>
+            <input
+              type="text"
+              value={searchRegNo}
+              onChange={(e) => setSearchRegNo(e.target.value)}
+              placeholder="Search by registration number..."
+              className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
+            />
+          </div>
+          <div className="w-40">
+            <label className="block text-sm font-semibold text-neutral-700 mb-1.5">
+              Category
+            </label>
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="">All</option>
+              <option value="Bus">Bus</option>
+              <option value="Train">Train</option>
+            </select>
+          </div>
+          <div className="w-40">
+            <label className="block text-sm font-semibold text-neutral-700 mb-1.5">
+              Type
+            </label>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="">All</option>
+              <option value="Passenger">Passenger</option>
+              <option value="Cargo">Cargo</option>
+            </select>
+          </div>
+          <div className="w-40">
+            <label className="block text-sm font-semibold text-neutral-700 mb-1.5">
+              Status
+            </label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="">All</option>
+              <option value="AVAILABLE">Available</option>
+              <option value="UNDER MAINTENANCE">Under Maintenance</option>
+              <option value="UNAVAILABLE">Unavailable</option>
+            </select>
+          </div>
+          <div>
+            <button
+              onClick={resetFilters}
+              className="px-6 py-2.5 rounded-xl bg-secondary-50 border border-secondary-200 text-secondary-700 font-semibold hover:bg-secondary-100 hover:border-secondary-300 transition-all flex items-center gap-2"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              Reset filters
+            </button>
+          </div>
         </div>
-      )}
+      </div>
 
+      {/* Data Table – Reg No in dark blue, larger */}
       <div className="bg-white rounded-xl shadow border border-neutral-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-neutral-200">
@@ -198,9 +273,6 @@ const AllVehiclesPage = () => {
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-neutral-900 uppercase tracking-wider">
                   Category / Type
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-neutral-900 uppercase tracking-wider">
-                  Department
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-neutral-900 uppercase tracking-wider">
                   Status
@@ -219,7 +291,6 @@ const AllVehiclesPage = () => {
             <tbody className="divide-y divide-neutral-100">
               {paginatedVehicles.map((vehicle) => {
                 const effectiveStatus = getEffectiveStatus(vehicle);
-                const departmentName = getDepartmentName(vehicle);
                 const capacity =
                   vehicle.type === "Passenger"
                     ? `${vehicle.seatCapacity} seats`
@@ -230,10 +301,11 @@ const AllVehiclesPage = () => {
                     key={vehicle._id}
                     className="hover:bg-neutral-50 transition-colors"
                   >
-                    <td className="px-4 py-3 text-sm font-mono font-medium">
+                    {/* Registration Number - dark blue, larger, bold */}
+                    <td className="px-4 py-3">
                       <Link
                         to={`/vehicles/${vehicle._id}`}
-                        className="text-primary-700 hover:text-primary-900 hover:underline"
+                        className="text-blue-800 hover:text-blue-900 hover:underline font-semibold text-base"
                       >
                         {vehicle.registrationNumber}
                       </Link>
@@ -248,9 +320,6 @@ const AllVehiclesPage = () => {
                       <span className="text-xs text-neutral-500">
                         {capacity}
                       </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-neutral-700">
-                      {departmentName}
                     </td>
                     <td className="px-4 py-3">
                       {getStatusBadge(effectiveStatus)}
@@ -289,12 +358,13 @@ const AllVehiclesPage = () => {
         </div>
       </div>
 
+      {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-3 mt-6">
+        <div className="flex justify-center items-center gap-3 mt-10">
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="px-4 py-2 rounded-lg border border-neutral-200 text-neutral-600 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50"
+            className="px-5 py-2 rounded-xl border border-neutral-200 text-neutral-600 font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50 transition-all"
           >
             ← Previous
           </button>
@@ -305,7 +375,7 @@ const AllVehiclesPage = () => {
           <button
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="px-4 py-2 rounded-lg border border-neutral-200 text-neutral-600 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50"
+            className="px-5 py-2 rounded-xl border border-neutral-200 text-neutral-600 font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50 transition-all"
           >
             Next →
           </button>

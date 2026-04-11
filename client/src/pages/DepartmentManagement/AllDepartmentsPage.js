@@ -106,7 +106,7 @@ const AllDepartmentsPage = () => {
             Departments
           </h1>
           <p className="text-neutral-500 text-sm mt-1">
-            Manage and oversee all organizational departments
+            Manage and oversee all organizational departments here
           </p>
         </div>
         <Link
