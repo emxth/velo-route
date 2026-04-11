@@ -251,6 +251,12 @@ const AddBooking = () => {
       // Clear coach selection when switching away from train
       if (name === 'transportType' && value !== 'TRAIN') {
         updated.coachNumber = '';
+        updated.seatNumbers = [];
+      }
+
+      // When changing coach/class for train, reset selected seats
+      if (name === 'coachNumber' && prev.transportType === 'TRAIN') {
+        updated.seatNumbers = [];
       }
 
       return updated;
@@ -377,7 +383,9 @@ const AddBooking = () => {
       formData.tripId.trim() &&
       formData.fromLocation.trim() &&
       formData.toLocation.trim() &&
-      formData.departureTime;
+      formData.departureTime &&
+      // For trains, ensure coach/class is selected before loading seats
+      (formData.transportType !== 'TRAIN' || formData.coachNumber.trim());
 
     if (!hasRequiredTripDetails) {
       console.log('Skipping - missing required fields');
@@ -400,6 +408,8 @@ const AddBooking = () => {
           fromLocation: formData.fromLocation.trim(),
           toLocation: formData.toLocation.trim(),
           departureTime: departureTimeISO,
+          // For trains, scope occupied seats to current coach/class
+          coachNumber: formData.transportType === 'TRAIN' ? formData.coachNumber : undefined,
         };
 
         const response = await api.get('/bookings/occupied-seats', { params });
@@ -419,7 +429,7 @@ const AddBooking = () => {
     };
 
     fetchOccupiedSeats();
-  }, [formData.tripId, formData.transportType, formData.fromLocation, formData.toLocation, formData.departureTime]);
+  }, [formData.tripId, formData.transportType, formData.fromLocation, formData.toLocation, formData.departureTime, formData.coachNumber]);
 
   // Handle Form Submission
   // Validate form and send booking data to backend API
@@ -704,7 +714,14 @@ const AddBooking = () => {
                 <button
                   type="button"
                   onClick={() => setSeatModalOpen(true)}
-                  disabled={loadingOccupiedSeats || !formData.tripId.trim() || !formData.fromLocation.trim() || !formData.toLocation.trim() || !formData.departureTime}
+                  disabled={
+                    loadingOccupiedSeats ||
+                    !formData.tripId.trim() ||
+                    !formData.fromLocation.trim() ||
+                    !formData.toLocation.trim() ||
+                    !formData.departureTime ||
+                    (formData.transportType === 'TRAIN' && !formData.coachNumber.trim())
+                  }
                   className={`w-full px-4 py-3 border rounded-lg text-left transition ${
                     errors.seatNumbers
                       ? 'border-red-500 bg-red-50'
@@ -724,9 +741,11 @@ const AddBooking = () => {
                     </div>
                   ) : (
                     <p className="text-gray-500">
-                      {formData.tripId.trim() && formData.fromLocation.trim() && formData.toLocation.trim() && formData.departureTime
-                        ? 'Click to select seats'
-                        : 'Select a schedule from Trip Finder first'}
+                      {!(formData.tripId.trim() && formData.fromLocation.trim() && formData.toLocation.trim() && formData.departureTime)
+                        ? 'Select a schedule from Trip Finder first'
+                        : formData.transportType === 'TRAIN' && !formData.coachNumber.trim()
+                          ? 'Select coach/class first'
+                          : 'Click to select seats'}
                     </p>
                   )}
                 </button>
@@ -816,6 +835,7 @@ const AddBooking = () => {
         selectedSeats={formData.seatNumbers}
         occupiedSeats={occupiedSeats}
         seatCapacity={vehicleDetails?.seatCapacity}
+        coachNumber={formData.coachNumber}
       />
     </div>
   );

@@ -10,12 +10,35 @@ const SeatSelectionModal = ({
   selectedSeats,
   occupiedSeats = [],
   seatCapacity,
+  coachNumber,
 }) => {
   const [localSelectedSeats, setLocalSelectedSeats] = useState(selectedSeats || []);
 
   const safeSeatCapacity = Number.isFinite(Number(seatCapacity)) && Number(seatCapacity) > 0
     ? Number(seatCapacity)
     : null;
+
+  const isBus = transportType === 'BUS';
+  const isTrain = transportType === 'TRAIN';
+  const seatsPerCoach = 32;
+
+  let trainCoachStart = null;
+  let trainCoachEnd = null;
+  let trainCoachSeatCount = null;
+
+  if (isTrain && safeSeatCapacity) {
+    const match = coachNumber?.match(/Coach\s+(\d+)/i);
+    const coachIndex = match ? Number(match[1]) || 1 : 1;
+
+    trainCoachStart = (coachIndex - 1) * seatsPerCoach + 1;
+    trainCoachEnd = Math.min(coachIndex * seatsPerCoach, safeSeatCapacity);
+
+    if (trainCoachStart > trainCoachEnd) {
+      trainCoachSeatCount = 0;
+    } else {
+      trainCoachSeatCount = trainCoachEnd - trainCoachStart + 1;
+    }
+  }
 
   useEffect(() => {
     if (!isOpen) {
@@ -31,15 +54,18 @@ const SeatSelectionModal = ({
         return false;
       }
 
+      // For trains, also constrain selection to the current coach slice
+      if (isTrain && trainCoachSeatCount && (seat < trainCoachStart || seat > trainCoachEnd)) {
+        return false;
+      }
+
       return true;
     });
 
     setLocalSelectedSeats(nextSelected);
-  }, [isOpen, selectedSeats, occupiedSeats, safeSeatCapacity]);
+  }, [isOpen, selectedSeats, occupiedSeats, safeSeatCapacity, isTrain, trainCoachSeatCount, trainCoachStart, trainCoachEnd]);
 
   if (!isOpen) return null;
-
-  const isBus = transportType === 'BUS';
   const fallbackColumns = 5;
   const totalSeats = safeSeatCapacity;
   const seatLayout = {
@@ -101,6 +127,27 @@ const SeatSelectionModal = ({
   };
 
   const busRows = isBus && totalSeats ? buildBusRows(totalSeats) : [];
+
+  const buildTrainRows = () => {
+    if (!isTrain || !trainCoachSeatCount || !trainCoachStart) return [];
+
+    const rows = [];
+    const lastSeat = trainCoachStart + trainCoachSeatCount - 1;
+    let nextSeat = trainCoachStart;
+
+    while (nextSeat <= lastSeat) {
+      const rowSeats = [];
+      for (let i = 0; i < 4 && nextSeat <= lastSeat; i += 1) {
+        rowSeats.push(nextSeat);
+        nextSeat += 1;
+      }
+      rows.push(rowSeats);
+    }
+
+    return rows;
+  };
+
+  const trainRows = buildTrainRows();
 
   const toggleSeat = (seatNumber) => {
     setLocalSelectedSeats((prev) =>
@@ -228,6 +275,46 @@ const SeatSelectionModal = ({
                     </div>
                   );
                 })}
+              </div>
+            ) : isTrain ? (
+              <div className="space-y-2">
+                {trainCoachSeatCount && trainCoachSeatCount > 0 ? (
+                  trainRows.map((rowSeats, rowIndex) => {
+                    const leftSeats = rowSeats.slice(0, 2);
+                    const rightSeats = rowSeats.slice(2);
+
+                    return (
+                      <div key={`train-row-${rowIndex}`} className="flex items-center gap-5 justify-center">
+                        <div className="flex gap-1 min-w-[3.5rem] justify-center">
+                          {leftSeats.map((seatNumber) => (
+                            <SeatButton
+                              key={seatNumber}
+                              seatNumber={seatNumber}
+                              isOccupied={occupiedSeats.includes(seatNumber)}
+                              isSelected={localSelectedSeats.includes(seatNumber)}
+                              onToggle={toggleSeat}
+                            />
+                          ))}
+                        </div>
+                        <div className="flex gap-1 min-w-[3.5rem] justify-center">
+                          {rightSeats.map((seatNumber) => (
+                            <SeatButton
+                              key={seatNumber}
+                              seatNumber={seatNumber}
+                              isOccupied={occupiedSeats.includes(seatNumber)}
+                              isSelected={localSelectedSeats.includes(seatNumber)}
+                              onToggle={toggleSeat}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="py-6 text-center text-sm text-gray-600">
+                    No seats available for this coach.
+                  </div>
+                )}
               </div>
             ) : (
               <div
