@@ -137,7 +137,7 @@ const BookingCard = ({
         {/* Actions */}
         <div className="flex flex-wrap gap-3 justify-end">
           {/* Update Button - Only if PENDING */}
-          {isPending && (
+          {isPending && !isPaid && (
             <button
               onClick={() => onUpdateBooking(booking._id)}
               className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition font-medium"

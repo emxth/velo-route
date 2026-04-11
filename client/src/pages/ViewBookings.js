@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/axios';
@@ -6,7 +5,6 @@ import { Users, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import Toast from '../components/Toast';
 import BookingCard from '../components/Booking/BookingCard';
 import CancelBookingModal from '../components/Booking/CancelBookingModal';
-import { formatDateTime, getStatusBadgeClass, getPaymentBadgeClass } from '../utils/bookingFormatters';
 
 const ViewBookings = () => {
     const navigate = useNavigate();
@@ -21,6 +19,12 @@ const ViewBookings = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
     const [toast, setToast] = useState(null);
+
+    // Filters
+    const [statusFilter, setStatusFilter] = useState('ALL'); // ALL | PENDING | CONFIRMED | CANCELLED
+    const [timeFilter, setTimeFilter] = useState('ALL'); // ALL | UPCOMING | PAST
+    const [paymentFilter, setPaymentFilter] = useState('ALL'); // ALL | UNPAID | PAID | REFUNDED
+    const [transportFilter, setTransportFilter] = useState('ALL'); // ALL | BUS | TRAIN
 
     // Fetch user's bookings on component mount
     useEffect(() => {
@@ -55,6 +59,11 @@ const ViewBookings = () => {
 
         confirmPaymentFromRedirect();
     }, [searchParams, navigate]);
+
+    // Reset to first page when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [statusFilter, timeFilter, paymentFilter, transportFilter]);
 
     const fetchBookings = async () => {
         try {
@@ -250,11 +259,40 @@ const ViewBookings = () => {
         );
     }
 
-    // Compute pagination values
-    const totalPages = Math.ceil(bookings.length / itemsPerPage);
-    const paginatedBookings = bookings.slice(
+    // Apply filters to bookings
+    const filteredBookings = bookings.filter((booking) => {
+        const matchesStatus =
+            statusFilter === 'ALL' || booking.bookingStatus === statusFilter;
+
+        const matchesPayment =
+            paymentFilter === 'ALL' || booking.paymentStatus === paymentFilter;
+
+        const matchesTransport =
+            transportFilter === 'ALL' || booking.transportType === transportFilter;
+
+        let matchesTime = true;
+        if (timeFilter !== 'ALL') {
+            const departureMs = new Date(booking.departureTime).getTime();
+            if (Number.isNaN(departureMs)) {
+                matchesTime = false;
+            } else if (timeFilter === 'UPCOMING') {
+                matchesTime = departureMs > Date.now();
+            } else if (timeFilter === 'PAST') {
+                matchesTime = departureMs <= Date.now();
+            }
+        }
+
+        return matchesStatus && matchesPayment && matchesTransport && matchesTime;
+    });
+
+    // Compute pagination values based on filtered bookings
+    const totalPages = filteredBookings.length === 0
+        ? 1
+        : Math.ceil(filteredBookings.length / itemsPerPage);
+
+    const paginatedBookings = filteredBookings.slice(
         (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
+        currentPage * itemsPerPage,
     );
 
     // Bookings list
@@ -265,19 +303,120 @@ const ViewBookings = () => {
                 <div className="flex justify-between items-center mb-8">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-800">My Bookings</h1>
-                        <p className="text-gray-600 mt-1">{bookings.length} booking{bookings.length !== 1 ? 's' : ''} found</p>
+                        <p className="text-gray-600 mt-1">
+                            {filteredBookings.length}
+                            {' '}
+                            booking
+                            {filteredBookings.length !== 1 ? 's' : ''}
+                            {' '}
+                            found
+                        </p>
                     </div>
-                    <button
-                        type="button"
-                        onClick={() => navigate('/addBooking')}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
-                    >
-                        + New Booking
-                    </button>
+                </div>
+
+                {/* Filters */}
+                <div className="mb-6 rounded-xl bg-white shadow-sm border border-gray-200 p-4 md:p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-4 mb-3">
+                        <h2 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">
+                            Filter bookings
+                        </h2>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setStatusFilter('ALL');
+                                setTimeFilter('ALL');
+                                setPaymentFilter('ALL');
+                                setTransportFilter('ALL');
+                            }}
+                            className="text-xs font-medium text-blue-600 hover:text-blue-700"
+                        >
+                            Reset filters
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="space-y-1">
+                            <label
+                                htmlFor="statusFilter"
+                                className="block text-xs font-semibold text-gray-600 uppercase tracking-wide"
+                            >
+                                Status
+                            </label>
+                            <select
+                                id="statusFilter"
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                            >
+                                <option value="ALL">All</option>
+                                <option value="PENDING">Pending</option>
+                                <option value="CONFIRMED">Confirmed</option>
+                                <option value="CANCELLED">Cancelled</option>
+                            </select>
+                        </div>
+
+                        <div className="space-y-1">
+                            <label
+                                htmlFor="timeFilter"
+                                className="block text-xs font-semibold text-gray-600 uppercase tracking-wide"
+                            >
+                                Time
+                            </label>
+                            <select
+                                id="timeFilter"
+                                value={timeFilter}
+                                onChange={(e) => setTimeFilter(e.target.value)}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                            >
+                                <option value="ALL">All</option>
+                                <option value="UPCOMING">Upcoming</option>
+                                <option value="PAST">Past</option>
+                            </select>
+                        </div>
+
+                        <div className="space-y-1">
+                            <label
+                                htmlFor="paymentFilter"
+                                className="block text-xs font-semibold text-gray-600 uppercase tracking-wide"
+                            >
+                                Payment
+                            </label>
+                            <select
+                                id="paymentFilter"
+                                value={paymentFilter}
+                                onChange={(e) => setPaymentFilter(e.target.value)}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                            >
+                                <option value="ALL">All</option>
+                                <option value="UNPAID">Unpaid</option>
+                                <option value="PAID">Paid</option>
+                                <option value="REFUNDED">Refunded</option>
+                            </select>
+                        </div>
+
+                        <div className="space-y-1">
+                            <label
+                                htmlFor="transportFilter"
+                                className="block text-xs font-semibold text-gray-600 uppercase tracking-wide"
+                            >
+                                Transport
+                            </label>
+                            <select
+                                id="transportFilter"
+                                value={transportFilter}
+                                onChange={(e) => setTransportFilter(e.target.value)}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                            >
+                                <option value="ALL">All</option>
+                                <option value="BUS">Bus</option>
+                                <option value="TRAIN">Train</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Calculate pagination */}
-                {bookings.length > 0 && (
+                {filteredBookings.length > 0 && (
                     <>
                         {/* Bookings Grid */}
                         <div className="grid gap-6 mb-8">
@@ -297,7 +436,7 @@ const ViewBookings = () => {
                         </div>
 
                         {/* Pagination Controls */}
-                        {bookings.length > itemsPerPage && (
+                        {filteredBookings.length > itemsPerPage && (
                             <div className="flex items-center justify-center gap-4 mt-8">
                                 <button
                                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
