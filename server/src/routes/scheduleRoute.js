@@ -14,7 +14,7 @@ export const ScheduleRoute = () => {
     //route for create Scheduling
     router.post("/addSchedule", protect, authorize("admin"), controller.create.bind(controller));
     //route for retrieve Schedules
-    router.get("/", protect, controller.getAllSchedules.bind(controller));
+    router.get("/", controller.getAllSchedules.bind(controller));
     //route for specific Schedules
     router.get("/:id", protect, controller.getSpecificSchedule.bind(controller));
     //route for update Schedule
