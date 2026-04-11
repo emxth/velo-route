@@ -5,7 +5,8 @@ const NAV_GROUPS = [
   {
     category: "Administration",
     items: [
-      { key: "admin", label: "User Permissions", to: "/admin" },
+      { key: "admin", label: "Admin View", to: "/admin" },
+      { key: "admin", label: "User Permissions", to: "/admin-permissions" },
       { key: "admin", label: "Add User", to: "/add-user" },
       { key: "admin", label: "View Complaints & Feedback", to: "/view-complaints" },
     ],

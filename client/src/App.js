@@ -19,6 +19,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import AddUser from "./pages/AddUser";
 import ViewComplaintsPage from "./pages/ViewComplaintsPage";
+import AdminPermissions from "./pages/AdminPermissions";
 
 const Unauthorized = () => <div>Unauthorized</div>;
 
@@ -44,6 +45,7 @@ function App() {
 
             <Route element={<ProtectedRoute roles={["admin"]} />}>
               <Route path="/admin" element={<AdminPage />} />
+              <Route path="/admin-permissions" element={<AdminPermissions />} />
               <Route path="/add-user" element={<AddUser />} />
               <Route path="/view-complaints" element={<ViewComplaintsPage />} />
             </Route>
