@@ -74,7 +74,11 @@ const ScheduleTable = ({ schedules }) => {
                   state: {
                     prefillBooking: {
                       tripId,
-                      transportType: schedule.vehicleID?.type === "TRAIN" ? "TRAIN" : "BUS",
+                      // Determine transport type based on vehicle category (Bus / Train)
+                      transportType:
+                        schedule.vehicleID?.category?.toLowerCase() === "train"
+                          ? "TRAIN"
+                          : "BUS",
                       fromLocation: schedule.routeId?.startLocation?.name || "",
                       toLocation: schedule.routeId?.endLocation?.name || "",
                       departureTime: scheduleDepartureTime || "",
