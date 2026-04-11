@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const getGreeting = () => {
@@ -12,6 +12,7 @@ const getGreeting = () => {
 const Header = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const initials = useMemo(() => {
     if (!user?.email) return "";
@@ -23,8 +24,11 @@ const Header = () => {
     navigate("/login");
   };
 
-  const navLinkClass = ({ isActive }) =>
-    `header-nav-link ${isActive ? "header-nav-link--active" : ""}`;
+  const navLinkClass = (active) =>
+    `header-nav-link ${active ? "header-nav-link--active" : ""}`;
+
+  const isHome = location.pathname === "/";
+  const isDashboardActive = !!user && !isHome; // stays active everywhere except "/"
 
   return (
     <header className="bg-white border-b shadow-sm">
@@ -46,22 +50,20 @@ const Header = () => {
             <p className="text-xs text-neutral-500">
               {getGreeting()},{` `}
             </p>
-            <p className="text-xs text-neutral-500">
-              {user ? user.name : "Guest"}
-            </p>
+            <p className="text-xs text-neutral-500">{user ? user.name : "Guest"}</p>
           </div>
         </div>
 
         <nav className="header-nav" aria-label="Primary navigation">
-          <NavLink to="/" className={navLinkClass} end>
+          {/* Home: active ONLY on "/" */}
+          <NavLink to="/" className={({ isActive }) => navLinkClass(isActive)} end>
             Home
           </NavLink>
 
-          {user && (
-            <NavLink to="/welcome" className={navLinkClass}>
-              Dashboard
-            </NavLink>
-          )}
+          {/* Dashboard: active for all non-home routes when logged in */}
+          <NavLink to="/welcome" className={() => navLinkClass(isDashboardActive)}>
+            Dashboard
+          </NavLink>
         </nav>
 
         <div className="flex items-center gap-4">
@@ -74,13 +76,8 @@ const Header = () => {
               >
                 {initials}
               </button>
-              <div
-                className="leading-tight cursor-pointer"
-                onClick={() => navigate("/profile")}
-              >
-                <div className="text-sm font-semibold text-neutral-900">
-                  {user.name}
-                </div>
+              <div className="leading-tight cursor-pointer" onClick={() => navigate("/profile")}>
+                <div className="text-sm font-semibold text-neutral-900">{user.name}</div>
                 <div className="text-xs text-neutral-600">{user.email}</div>
               </div>
             </div>
