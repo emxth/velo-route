@@ -44,7 +44,7 @@ body,
 }
 
 body {
-  font-family: Inter, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: "Plus Jakarta Sans", Inter, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   color: var(--color-text);
   background:
     radial-gradient(circle at top right, rgba(39, 174, 96, 0.09), transparent 35%),
@@ -638,4 +638,27 @@ h2 {
   .footer-inner {
     grid-template-columns: 1fr;
   }
+}
+
+.panel-icon--react {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  color: var(--color-primary);
+  background: rgba(26, 82, 118, 0.08);
+  border: 1px solid rgba(26, 82, 118, 0.14);
+}
+
+.panel-icon--react svg {
+  width: 22px;
+  height: 22px;
+}
+
+.landing-content h1,
+.section-head h2 {
+  letter-spacing: -0.02em;
 }

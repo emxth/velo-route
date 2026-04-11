@@ -1,8 +1,32 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { FiTruck, FiMapPin, FiSettings, FiBarChart2 } from "react-icons/fi";
 
 export default function HeroSection({ reduceMotion, fadeUp, stagger, hoverLift }) {
+  const features = [
+    {
+      Icon: FiTruck,
+      title: "Bookings",
+      desc: "Reserve bus or train seats in seconds.",
+    },
+    {
+      Icon: FiMapPin,
+      title: "Complaints & Feedback",
+      desc: "Geo-tag issues and improve services faster.",
+    },
+    {
+      Icon: FiSettings,
+      title: "Admin Control",
+      desc: "Manage vehicles, departments, users and payments.",
+    },
+    {
+      Icon: FiBarChart2,
+      title: "Operational Insights",
+      desc: "Monitor routes, schedules, and service quality.",
+    },
+  ];
+
   return (
     <section className="landing-hero" id="features">
       <div className="landing-bg" aria-hidden="true" />
@@ -17,7 +41,7 @@ export default function HeroSection({ reduceMotion, fadeUp, stagger, hoverLift }
             Industry, Innovation & Infrastructure
           </motion.span>
 
-          <motion.h1 variants={fadeUp}>
+          <motion.h1 variants={fadeUp} className="font-bold">
             VeloRoute — Smart Rural Transportation System
           </motion.h1>
 
@@ -28,8 +52,12 @@ export default function HeroSection({ reduceMotion, fadeUp, stagger, hoverLift }
           </motion.p>
 
           <motion.div className="landing-actions" variants={fadeUp}>
-            <Link className="btn btn-primary" to="/login">Get Started</Link>
-            <Link className="btn btn-outline" to="/register">Create Account</Link>
+            <Link className="btn btn-primary" to="/login">
+              Get Started
+            </Link>
+            <Link className="btn btn-outline" to="/schedules">
+              Book Now
+            </Link>
           </motion.div>
 
           <motion.div className="landing-meta" variants={fadeUp}>
@@ -62,22 +90,19 @@ export default function HeroSection({ reduceMotion, fadeUp, stagger, hoverLift }
           </div>
 
           <div className="panel-grid">
-            {[
-              { icon: "🚌", title: "Bookings", desc: "Reserve bus or train seats in seconds." },
-              { icon: "📍", title: "Complaints & Feedback", desc: "Geo-tag issues and improve services faster." },
-              { icon: "🛠️", title: "Admin Control", desc: "Manage vehicles, departments, users and payments." },
-              { icon: "📈", title: "Operational Insights", desc: "Monitor routes, schedules, and service quality." },
-            ].map((f) => (
+            {features.map(({ Icon, title, desc }) => (
               <motion.div
-                key={f.title}
+                key={title}
                 className="panel-item"
                 whileHover={hoverLift}
                 transition={{ duration: 0.18 }}
               >
-                <span className="panel-icon" aria-hidden="true">{f.icon}</span>
+                <span className="panel-icon panel-icon--react" aria-hidden="true">
+                  <Icon />
+                </span>
                 <div>
-                  <h4>{f.title}</h4>
-                  <p>{f.desc}</p>
+                  <h4>{title}</h4>
+                  <p>{desc}</p>
                 </div>
               </motion.div>
             ))}
