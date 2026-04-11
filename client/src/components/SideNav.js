@@ -3,10 +3,12 @@ import { Link, useLocation } from "react-router-dom";
 // Add Side Nav items paths here
 const NAV_GROUPS = [
   {
-    category: "User Management",
+    category: "Administration",
     items: [
-      { key: "admin", label: "Admin Area", to: "/admin" },
-      { key: "operator", label: "Operator Area", to: "/operator" },
+      { key: "admin", label: "Admin View", to: "/admin" },
+      { key: "admin", label: "User Permissions", to: "/admin-permissions" },
+      { key: "admin", label: "Add User", to: "/add-user" },
+      { key: "admin", label: "View Complaints & Feedback", to: "/view-complaints" },
     ],
   },
   {
@@ -21,7 +23,7 @@ const NAV_GROUPS = [
     category: "Complaints & Feedback",
     items: [
       // mark as public so it bypasses allowed filter
-      { key: "complaints", label: "View Complaints", to: "/complaints", public: true },
+      { key: "complaints", label: "Add Complaints", to: "/complaints", public: true },
     ],
   },
 ];
