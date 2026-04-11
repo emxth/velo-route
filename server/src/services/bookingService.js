@@ -56,6 +56,48 @@ const resolveEstimatedFareForTrip = async (tripId) => {
   }
 };
 
+const getTrainClassFromCoachLabel = (coachLabel) => {
+  if (!coachLabel) return "THIRD";
+  if (coachLabel.includes("1st Class")) return "FIRST";
+  if (coachLabel.includes("2nd Class")) return "SECOND";
+  return "THIRD";
+};
+
+const resolveFarePerSeatForTrip = async (tripId, transportType, coachNumber) => {
+  // Buses and other types use the route's estimatedFare as-is
+  if (transportType !== "TRAIN") {
+    return resolveEstimatedFareForTrip(tripId);
+  }
+
+  try {
+    const schedule = await Schedule.findById(tripId).populate("routeId", "distance");
+
+    if (!schedule?.routeId) {
+      throw new ApiError(400, "Invalid tripId: schedule not found");
+    }
+
+    const distanceKm = Number(schedule.routeId.distance);
+
+    if (!Number.isFinite(distanceKm) || distanceKm <= 0) {
+      throw new ApiError(400, "Route distance is not configured for this trip");
+    }
+
+    const trainClass = getTrainClassFromCoachLabel(coachNumber);
+    let ratePerKm;
+    if (trainClass === "FIRST") ratePerKm = 100;
+    else if (trainClass === "SECOND") ratePerKm = 60;
+    else ratePerKm = 20;
+
+    return distanceKm * ratePerKm;
+  } catch (err) {
+    if (err instanceof ApiError) {
+      throw err;
+    }
+
+    throw new ApiError(400, "Invalid tripId format");
+  }
+};
+
 export const createBooking = async (userId, data) => {
   const { transportType, seatNumbers, coachNumber, phoneNumber, tripId, fromLocation, toLocation, departureTime } = data;
 
@@ -99,6 +141,7 @@ export const createBooking = async (userId, data) => {
     toLocation,
     departureTime,
     seatNumbers,
+    coachNumber,
   });
 
   if (existingBookings.length > 0) {
@@ -106,7 +149,7 @@ export const createBooking = async (userId, data) => {
   }
 
   const seatCount = seatNumbers.length;
-  const pricePerSeat = await resolveEstimatedFareForTrip(tripId);
+  const pricePerSeat = await resolveFarePerSeatForTrip(tripId, transportType, coachNumber);
   const totalAmount = pricePerSeat * seatCount;
 
   // ---------------- Create Booking ----------------
@@ -168,7 +211,7 @@ export const getMyBookings = async (userId) => {
 export const getAllBookings = () =>
   bookingRepo.findAll();
 
-export const getOccupiedSeats = async ({ tripId, transportType, fromLocation, toLocation, departureTime, excludeBookingId }) => {
+export const getOccupiedSeats = async ({ tripId, transportType, fromLocation, toLocation, departureTime, coachNumber, excludeBookingId }) => {
   if (!tripId || !transportType || !fromLocation || !toLocation || !departureTime) {
     throw new ApiError(400, "tripId, transportType, fromLocation, toLocation and departureTime are required");
   }
@@ -179,6 +222,7 @@ export const getOccupiedSeats = async ({ tripId, transportType, fromLocation, to
     fromLocation,
     toLocation,
     departureTime,
+    coachNumber,
     excludeBookingId,
   });
 
@@ -407,13 +451,33 @@ export const updateBooking = async (bookingId, userId, data) => {
     throw new ApiError(400, "Only pending bookings can be updated");
   }
 
-  const { seatNumbers, phoneNumber, departureTime } = data;
+  const { seatNumbers, phoneNumber, departureTime, coachNumber } = data;
 
   const validatedDepartureDate = departureTime
     ? validateDepartureTimeWindow(departureTime)
     : null;
 
   const targetDepartureTime = validatedDepartureDate || booking.departureTime;
+
+  const isTrain = booking.transportType === "TRAIN";
+
+  // ---------------- Coach/Class Update (for trains) ----------------
+  let nextCoachNumber = booking.coachNumber;
+
+  if (isTrain) {
+    if (coachNumber !== undefined) {
+      if (!coachNumber) {
+        throw new ApiError(400, "Train booking requires coach number");
+      }
+      nextCoachNumber = coachNumber;
+    }
+
+    if (!nextCoachNumber) {
+      throw new ApiError(400, "Train booking requires coach number");
+    }
+  } else if (coachNumber) {
+    throw new ApiError(400, "Bus booking should not include coach number");
+  }
 
   // ---------------- Phone Update ----------------
   if (phoneNumber) {
@@ -433,6 +497,7 @@ export const updateBooking = async (bookingId, userId, data) => {
       toLocation: booking.toLocation,
       departureTime: targetDepartureTime,
       seatNumbers,
+      coachNumber: isTrain ? nextCoachNumber : undefined,
       excludeBookingId: bookingId,
     });
 
@@ -443,8 +508,13 @@ export const updateBooking = async (bookingId, userId, data) => {
     booking.seatNumbers = seatNumbers;
     booking.seatCount = seatNumbers.length;
 
-    const pricePerSeat = await resolveEstimatedFareForTrip(booking.tripId);
+    const pricePerSeat = await resolveFarePerSeatForTrip(booking.tripId, booking.transportType, isTrain ? nextCoachNumber : undefined);
     booking.amount = pricePerSeat * booking.seatCount;
+  }
+
+  // Persist updated coach/class for trains
+  if (isTrain && nextCoachNumber && booking.coachNumber !== nextCoachNumber) {
+    booking.coachNumber = nextCoachNumber;
   }
 
   // ---------------- Departure Time ----------------

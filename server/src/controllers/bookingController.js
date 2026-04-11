@@ -31,6 +31,7 @@ export const getOccupiedSeats = async (req, res, next) => {
       fromLocation: req.query.fromLocation,
       toLocation: req.query.toLocation,
       departureTime: req.query.departureTime,
+      coachNumber: req.query.coachNumber,
       excludeBookingId: req.query.excludeBookingId,
     });
 

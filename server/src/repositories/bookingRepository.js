@@ -36,7 +36,7 @@ const buildDepartureTimeSlotQuery = (departureTime) => {
 /*
  Find if requested seats already exist for this trip
 */
-export const findConflictingSeats = ({ tripId, transportType, fromLocation, toLocation, departureTime, seatNumbers, excludeBookingId }) => {
+export const findConflictingSeats = ({ tripId, transportType, fromLocation, toLocation, departureTime, seatNumbers, coachNumber, excludeBookingId }) => {
     const departureTimeQuery = buildDepartureTimeSlotQuery(departureTime);
     if (!departureTimeQuery) {
         return Promise.resolve([]);
@@ -52,6 +52,10 @@ export const findConflictingSeats = ({ tripId, transportType, fromLocation, toLo
         bookingStatus: { $ne: "CANCELLED" },
     };
 
+    if (coachNumber) {
+        query.coachNumber = coachNumber;
+    }
+
     if (excludeBookingId) {
         query._id = { $ne: excludeBookingId };
     }
@@ -59,7 +63,7 @@ export const findConflictingSeats = ({ tripId, transportType, fromLocation, toLo
     return Booking.find(query);
 };
 
-export const findOccupiedSeats = ({ tripId, transportType, fromLocation, toLocation, departureTime, excludeBookingId }) => {
+export const findOccupiedSeats = ({ tripId, transportType, fromLocation, toLocation, departureTime, coachNumber, excludeBookingId }) => {
     const departureTimeQuery = buildDepartureTimeSlotQuery(departureTime);
     if (!departureTimeQuery) {
         console.warn('Invalid departureTime, returning empty result:', departureTime);
@@ -74,6 +78,10 @@ export const findOccupiedSeats = ({ tripId, transportType, fromLocation, toLocat
         departureTime: departureTimeQuery,
         bookingStatus: { $ne: "CANCELLED" },
     };
+
+    if (coachNumber) {
+        query.coachNumber = coachNumber;
+    }
 
     if (excludeBookingId) {
         query._id = { $ne: excludeBookingId };
