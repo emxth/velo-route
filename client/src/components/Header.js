@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const getGreeting = () => {
@@ -23,15 +23,43 @@ const Header = () => {
     navigate("/login");
   };
 
+  const navLinkClass = ({ isActive }) =>
+    `header-nav-link ${isActive ? "header-nav-link--active" : ""}`;
+
   return (
     <header className="bg-white border-b shadow-sm">
-      <div className="flex items-center justify-between max-w-screen-xl gap-4 px-4 py-3 mx-auto">
-        <div className="leading-tight">
-          <p className="text-xs text-neutral-500">
-            {getGreeting()},{` `}
-            {user ? user.name : "Guest"}
-          </p>
-          <h1 className="text-lg font-semibold text-neutral-900">VeloRoute</h1>
+      <div className="flex items-center justify-between max-w-screen-xl gap-4 py-3 mx-auto">
+        <div className="flex items-center gap-6 leading-tight">
+          <h1
+            className="text-lg font-semibold cursor-pointer text-neutral-900"
+            onClick={() => navigate("/")}
+            title="Go to Home"
+          >
+            VeloRoute
+          </h1>
+          
+          <div className="leading-tight">
+            <p className="text-xs text-neutral-500">
+              {getGreeting()},{` `}
+            </p>
+            <p className="text-xs text-neutral-500">
+              {user ? user.name : "Guest"}
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <nav className="header-nav" aria-label="Primary navigation">
+            <NavLink to="/" className={navLinkClass} end>
+              Home
+            </NavLink>
+
+            {user && (
+              <NavLink to="/welcome" className={navLinkClass}>
+                Dashboard
+              </NavLink>
+            )}
+          </nav>
         </div>
 
         <div className="flex items-center gap-4">
@@ -44,12 +72,18 @@ const Header = () => {
               >
                 {initials}
               </button>
-              <div className="leading-tight">
-                <div className="text-sm font-semibold text-neutral-900">{user.name}</div>
+              <div
+                className="leading-tight cursor-pointer"
+                onClick={() => navigate("/profile")}
+              >
+                <div className="text-sm font-semibold text-neutral-900">
+                  {user.name}
+                </div>
                 <div className="text-xs text-neutral-600">{user.email}</div>
               </div>
             </div>
           )}
+
           {user ? (
             <button className="btn-outline" onClick={handleLogout}>
               Logout
