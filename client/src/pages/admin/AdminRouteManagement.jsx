@@ -1,5 +1,5 @@
 // pages/admin/AdminRouteManagement.jsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import LoadingVehicle from "../../components/LoadingVehicle";
 import { FaRoute } from "react-icons/fa";
 import RouteForm from "../../components/Schedule & Routing/RouteForm";
@@ -8,6 +8,7 @@ import PageHeader from "../../components/PageHeader";
 import CardGrid from "../../components/Schedule & Routing/CardGrid";
 import ConfirmDialog from "../../components/Schedule & Routing/ConfirmDialog";
 import useCrud from "../../hooks/useCard";
+import Pagination from "../../components/Pagination";
 
 const AdminRouteManagement = () => {
     const { data: routes, loading, fetchData, createItem, updateItem, deleteItem } = useCrud("/routes");
@@ -15,6 +16,15 @@ const AdminRouteManagement = () => {
     const [editingRoute, setEditingRoute] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [deleteConfirm, setDeleteConfirm] = useState(null);
+
+    const [page, setPage] = useState(1);
+
+    const itemsPerPage = 6;
+
+
+    useEffect(() => {
+        setPage(1);
+    }, [searchTerm]);
 
     const handleCreateRoute = async (routeData) => {
         try {
@@ -49,6 +59,13 @@ const AdminRouteManagement = () => {
     const filteredRoutes = routes.filter(route =>
         route.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         route.routeNumber?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const totalPages = Math.ceil(filteredRoutes.length / itemsPerPage);
+
+    const paginatedRoutes = filteredRoutes.slice(
+        (page - 1) * itemsPerPage,
+        page * itemsPerPage
     );
 
     const renderRouteCard = (route, { onEdit, onDelete }) => (
@@ -129,7 +146,7 @@ const AdminRouteManagement = () => {
             />
 
             <CardGrid
-                items={filteredRoutes}
+                items={paginatedRoutes}
                 renderCard={renderRouteCard}
                 onEdit={(route) => setEditingRoute(route)}
                 onDelete={(route) => setDeleteConfirm(route)}
@@ -139,6 +156,10 @@ const AdminRouteManagement = () => {
                 emptyMessage="No routes found"
                 emptyIcon={FaRoute}
             />
+            <Pagination 
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}/>
 
             {(showForm || editingRoute) && (
                 <RouteForm
