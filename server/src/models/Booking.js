@@ -113,13 +113,12 @@ const bookingSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-/*
- Prevent same seat being booked twice for the same trip.
- MongoDB will enforce uniqueness.
-*/
-bookingSchema.index(
-  { tripId: 1, seatNumbers: 1 },
-  { unique: true }
-);
+// NOTE:
+// Seat conflicts are handled in the service layer using bookingRepository.findConflictingSeats,
+// which correctly takes into account transportType, coachNumber, locations, departureTime and status.
+// A database-level unique index on { tripId, seatNumbers } is too coarse for trains
+// (different coaches can legitimately reuse the same seat number) and also blocks
+// reusing seats from CANCELLED bookings. That index is therefore intentionally removed
+// to avoid E11000 duplicate key errors when the business logic says a seat is available.
 
 export default mongoose.model("Booking", bookingSchema);

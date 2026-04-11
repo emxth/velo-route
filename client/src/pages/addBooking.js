@@ -707,10 +707,17 @@ const AddBooking = () => {
               <h2 className="text-xl font-semibold text-slate-800">Seat Selection</h2>
             </div>
 
-            <div className="inline-flex items-center gap-3 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2">
-              <span className="text-sm font-semibold text-cyan-800">Price per seat</span>
-              <span className="text-lg font-bold text-cyan-900">Rs {farePerSeat || 0}</span>
-            </div>
+            {/* Show helper text for train until class is selected, otherwise price per seat */}
+            {formData.transportType === 'TRAIN' && !formData.coachNumber ? (
+              <div className="inline-flex items-center gap-3 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2">
+                <span className="text-sm font-semibold text-cyan-800">Select class to find price</span>
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-3 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2">
+                <span className="text-sm font-semibold text-cyan-800">Price per seat</span>
+                <span className="text-lg font-bold text-cyan-900">Rs {farePerSeat || 0}</span>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
