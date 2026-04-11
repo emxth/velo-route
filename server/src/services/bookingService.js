@@ -4,6 +4,7 @@ import { sendSMS } from "../services/notificationService.js";
 import { createCheckoutSession, refundPayment, retrieveSession } from "./paymentService.js";
 import { ApiError } from "../utils/apiError.js";
 import Schedule from "../models/Schedule.js";
+import mongoose from "mongoose";
 
 /*
   Service Layer = Business rules
@@ -64,8 +65,14 @@ const getTrainClassFromCoachLabel = (coachLabel) => {
 };
 
 const resolveFarePerSeatForTrip = async (tripId, transportType, coachNumber) => {
-  // Buses and other types use the route's estimatedFare as-is
+  // Buses and other non-train types
   if (transportType !== "TRAIN") {
+    // If tripId is not a valid ObjectId, skip DB lookup
+    // and fall back to a safe default fare per seat.
+    if (!mongoose.isValidObjectId(tripId)) {
+      return 1000;
+    }
+
     return resolveEstimatedFareForTrip(tripId);
   }
 
@@ -141,7 +148,7 @@ export const createBooking = async (userId, data) => {
     toLocation,
     departureTime,
     seatNumbers,
-    coachNumber,
+    ...(coachNumber ? { coachNumber } : {}),
   });
 
   if (existingBookings.length > 0) {

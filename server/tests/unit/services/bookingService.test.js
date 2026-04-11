@@ -31,6 +31,17 @@ const refundPaymentMock = jest.fn();
 const retrieveSessionMock = jest.fn();
 const sendSMSMock = jest.fn();
 
+// Mock Schedule model used inside bookingService for fare calculation
+const scheduleFindByIdMock = jest.fn();
+
+jest.unstable_mockModule("../../../src/models/Schedule.js", () => ({
+  __esModule: true,
+  default: {
+    findById: scheduleFindByIdMock,
+    find: jest.fn(),
+  },
+}));
+
 // Mock repository
 jest.unstable_mockModule("../../../src/repositories/bookingRepository.js", () => ({
   create: createBookingMock,
@@ -86,6 +97,12 @@ describe("Booking Service", () => {
       const mockBooking = { _id: "booking123", seatNumbers: ["A1"], passenger: "user123" };
       createBookingMock.mockResolvedValue(mockBooking);
       findConflictingSeatsMock.mockResolvedValue([]);
+      // Mock Schedule.findById().populate(...) chain used for fare calculation
+      scheduleFindByIdMock.mockReturnValue({
+        populate: jest.fn().mockResolvedValue({
+          routeId: { estimatedFare: 1500 },
+        }),
+      });
       const validDepartureTime = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
       const result = await createBooking("user123", {
