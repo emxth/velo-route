@@ -16,6 +16,7 @@ const AddBooking = () => {
 
   const [farePerSeat, setFarePerSeat] = useState(0);
   const [routeDistanceKm, setRouteDistanceKm] = useState(null);
+  const [ratePerKm, setRatePerKm] = useState(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -325,12 +326,14 @@ const AddBooking = () => {
     if (!routeDistanceKm || !formData.coachNumber) return;
 
     const trainClass = getTrainClassFromCoach(formData.coachNumber);
-    let ratePerKm;
-    if (trainClass === 'FIRST') ratePerKm = 100;
-    else if (trainClass === 'SECOND') ratePerKm = 60;
-    else ratePerKm = 20;
+    let nextRatePerKm;
+    if (trainClass === 'FIRST') nextRatePerKm = 100;
+    else if (trainClass === 'SECOND') nextRatePerKm = 60;
+    else nextRatePerKm = 20;
 
-    const newFarePerSeat = routeDistanceKm * ratePerKm;
+    setRatePerKm(nextRatePerKm);
+
+    const newFarePerSeat = routeDistanceKm * nextRatePerKm;
     setFarePerSeat(newFarePerSeat);
   }, [formData.transportType, formData.coachNumber, routeDistanceKm]);
 
@@ -342,6 +345,7 @@ const AddBooking = () => {
       setFarePerSeat(0);
       setVehicleDetails(null);
       setRouteDistanceKm(null);
+      setRatePerKm(null);
       return;
     }
     //Fetch estimated fare for the selected trip and update state
@@ -355,6 +359,7 @@ const AddBooking = () => {
 
         setFarePerSeat(estimatedFare);
         setRouteDistanceKm(!Number.isNaN(distanceKm) && distanceKm > 0 ? distanceKm : null);
+        setRatePerKm(null);
         setVehicleDetails({
           registrationNumber: vehicle.registrationNumber || 'N/A',
           category: vehicle.category || 'N/A',
@@ -370,6 +375,7 @@ const AddBooking = () => {
         console.error('Failed to fetch route estimated fare:', err);
         setFarePerSeat(0);
         setRouteDistanceKm(null);
+        setRatePerKm(null);
         setVehicleDetails(null);
       }
     };
@@ -836,6 +842,8 @@ const AddBooking = () => {
         occupiedSeats={occupiedSeats}
         seatCapacity={vehicleDetails?.seatCapacity}
         coachNumber={formData.coachNumber}
+        routeDistanceKm={formData.transportType === 'TRAIN' ? routeDistanceKm : undefined}
+        ratePerKm={formData.transportType === 'TRAIN' ? ratePerKm : undefined}
       />
     </div>
   );
