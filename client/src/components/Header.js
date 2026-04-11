@@ -30,13 +30,17 @@ const Header = () => {
     <header className="bg-white border-b shadow-sm">
       <div className="flex items-center justify-between max-w-screen-xl gap-4 px-3 py-3 mx-auto">
         <div className="flex items-center gap-6 leading-tight">
-          <h1
-            className="text-lg font-semibold cursor-pointer text-neutral-900"
+          <div
             onClick={() => navigate("/")}
             title="Go to Home"
+            className="inline-flex items-center gap-[10px] cursor-pointer select-none"
           >
-            VeloRoute
-          </h1>
+            <img
+              src="/logo.png"
+              alt="VeloRoute logo"
+              className="w-[54px] object-contain rounded-[10px]"
+            />
+          </div>
 
           <div className="leading-tight">
             <p className="text-xs text-neutral-500">
