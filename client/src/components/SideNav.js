@@ -7,7 +7,7 @@ const NAV_GROUPS = [
     items: [
       { key: "admin", label: "User Permissions", to: "/admin" },
       { key: "admin", label: "Add User", to: "/add-user" },
-      { key: "operator", label: "Operator Area", to: "/operator" },
+      { key: "admin", label: "View Complaints & Feedback", to: "/view-complaints" },
     ],
   },
   {
@@ -22,7 +22,7 @@ const NAV_GROUPS = [
     category: "Complaints & Feedback",
     items: [
       // mark as public so it bypasses allowed filter
-      { key: "complaints", label: "View Complaints", to: "/complaints", public: true },
+      { key: "complaints", label: "Add Complaints", to: "/complaints", public: true },
     ],
   },
 ];

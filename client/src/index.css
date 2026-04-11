@@ -951,3 +951,447 @@ AddUser Page Theme
     grid-template-columns: 1fr;
   }
 }
+
+
+/* =========================
+Complaints Admin UI
+========================= */
+.complaints-detail-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.complaints-muted {
+  margin: 0.35rem 0 0;
+  color: #516070;
+  font-size: 0.92rem;
+}
+
+/* layout: list + detail */
+.complaints-layout {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 980px) {
+  .complaints-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* list */
+.complaints-list {
+  position: sticky;
+  top: 88px; /* adjust if your header height differs */
+  max-height: calc(100vh - 110px);
+  overflow: auto;
+}
+
+@media (max-width: 980px) {
+  .complaints-list {
+    position: static;
+    max-height: none;
+  }
+}
+
+.complaints-list-controls {
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid rgba(219, 227, 232, 0.9);
+  margin-bottom: 0.8rem;
+}
+
+.complaints-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.complaints-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem;
+  padding: 0.85rem 0.9rem;
+  border: 1px solid rgba(219, 227, 232, 0.95);
+  border-radius: 12px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.7);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.complaints-item:hover {
+  background: rgba(26, 82, 118, 0.04);
+}
+
+.complaints-item.is-active {
+  border-color: rgba(26, 82, 118, 0.45);
+  background: rgba(26, 82, 118, 0.06);
+}
+
+.complaints-item-title {
+  font-weight: 800;
+  color: var(--color-text);
+  margin-bottom: 0.2rem;
+}
+
+.complaints-item-meta {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  color: #516070;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.complaints-item-loc {
+  margin-top: 0.25rem;
+  color: #6b7785;
+  font-size: 0.78rem;
+}
+
+.complaints-item-date {
+  color: #6b7785;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  padding-top: 0.15rem;
+}
+
+.complaints-pager {
+  margin-top: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+/* detail */
+.complaints-detail-panel {
+  min-height: 320px;
+}
+
+.complaints-detail-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 980px) {
+  .complaints-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.complaints-box {
+  border: 1px solid rgba(219, 227, 232, 0.95);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.7);
+  padding: 1rem;
+}
+
+.complaints-box-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 0.75rem;
+}
+
+/* key/value grid */
+.complaints-kv {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  background: rgba(244, 246, 247, 0.7);
+  border: 1px solid rgba(219, 227, 232, 0.9);
+  margin-bottom: 0.9rem;
+}
+
+@media (max-width: 720px) {
+  .complaints-kv {
+    grid-template-columns: 1fr;
+  }
+}
+
+.complaints-k {
+  font-size: 0.78rem;
+  color: #516070;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.25rem;
+}
+
+.complaints-v {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.complaints-message p {
+  margin: 0.35rem 0 0;
+}
+
+.complaints-location,
+.complaints-response {
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgba(219, 227, 232, 0.9);
+}
+
+/* status pill */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.6rem;
+  border-radius: 999px;
+  font-weight: 900;
+  font-size: 0.78rem;
+  text-transform: capitalize;
+  border: 1px solid rgba(219, 227, 232, 0.9);
+}
+
+.status-pending {
+  background: rgba(230, 126, 34, 0.12);
+  border-color: rgba(230, 126, 34, 0.28);
+  color: #b65f16;
+}
+
+.status-resolved {
+  background: rgba(39, 174, 96, 0.12);
+  border-color: rgba(39, 174, 96, 0.22);
+  color: #1f8f4d;
+}
+
+/* actions */
+.complaints-actions-row {
+  margin-top: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.complaints-danger {
+  border-color: rgba(230, 126, 34, 0.55) !important;
+  color: #b65f16 !important;
+}
+
+.complaints-danger:hover {
+  background: rgba(230, 126, 34, 0.10) !important;
+}
+
+/* ===== ViewComplaintsPage ===== */
+.viewc-controls {
+  padding: 0.85rem;
+  border: 1px solid rgba(219, 227, 232, 0.95);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.viewc-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.viewc-search {
+  flex: 1;
+  min-width: 260px;
+}
+
+.viewc-count {
+  margin-left: auto;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #516070;
+  white-space: nowrap;
+}
+
+/* Make list items match your theme */
+.viewc-item {
+  border: 1px solid rgba(219, 227, 232, 0.95);
+  background: rgba(255, 255, 255, 0.72);
+  border-radius: 14px;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.viewc-item:hover {
+  background: rgba(26, 82, 118, 0.04);
+}
+
+.viewc-item.is-active {
+  border-color: rgba(26, 82, 118, 0.45);
+  background: rgba(26, 82, 118, 0.06);
+}
+
+/* ===== ComplaintsPage (Citizen) ===== */
+.complaints-page h1,
+.complaints-page h3 {
+  letter-spacing: -0.01em;
+}
+
+.complaints-card {
+  border: 1px solid rgba(219, 227, 232, 0.95);
+  box-shadow: var(--shadow-sm);
+}
+
+.complaints-subtitle {
+  margin-top: 0.25rem;
+  color: #516070;
+  font-size: 0.92rem;
+}
+
+/* kind radio pills */
+.complaints-kind {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.complaints-kind label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(219, 227, 232, 0.95);
+  background: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  font-weight: 700;
+  color: #3c4b5f;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.complaints-kind label:hover {
+  background: rgba(26, 82, 118, 0.05);
+}
+
+.complaints-kind input {
+  accent-color: var(--color-primary);
+}
+
+/* Location box */
+.complaints-location-box {
+  padding: 0.95rem;
+  border-radius: var(--radius-md);
+  border: 1px dashed rgba(219, 227, 232, 0.95);
+  background: rgba(244, 246, 247, 0.6);
+}
+
+.complaints-location-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.complaints-link-btn {
+  border: 1px solid rgba(219, 227, 232, 0.9);
+  background: transparent;
+  padding: 0.25rem 0.5rem;
+  border-radius: 10px;
+  font-weight: 800;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.complaints-link-btn:hover {
+  background: rgba(26, 82, 118, 0.08);
+}
+
+/* search results dropdown */
+.complaints-results {
+  border: 1px solid rgba(219, 227, 232, 0.95);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+  max-height: 180px;
+}
+
+.complaints-result-btn {
+  width: 100%;
+  text-align: left;
+  padding: 0.65rem 0.75rem;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.complaints-result-btn:hover {
+  background: rgba(26, 82, 118, 0.05);
+}
+
+.complaints-selected {
+  margin-top: 0.4rem;
+  font-size: 0.82rem;
+  color: #516070;
+  font-weight: 700;
+}
+
+/* success / error banners */
+.complaints-banner {
+  padding: 0.75rem 0.85rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(219, 227, 232, 0.95);
+  background: rgba(255, 255, 255, 0.7);
+  font-weight: 700;
+}
+
+.complaints-banner--error {
+  border-color: rgba(230, 126, 34, 0.45);
+  background: rgba(230, 126, 34, 0.08);
+  color: #8f4a12;
+}
+
+.complaints-banner--success {
+  border-color: rgba(39, 174, 96, 0.35);
+  background: rgba(39, 174, 96, 0.08);
+  color: #1f8f4d;
+}
+
+/* list items */
+.complaints-list-item {
+  border: 1px solid rgba(219, 227, 232, 0.95);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.complaints-list-item:hover {
+  background: rgba(26, 82, 118, 0.04);
+}
+
+/* status pill (reuse style) */
+.complaints-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.16rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: capitalize;
+  border: 1px solid rgba(219, 227, 232, 0.9);
+  margin-top: 0.25rem;
+}
+
+.complaints-status-pending {
+  background: rgba(230, 126, 34, 0.12);
+  border-color: rgba(230, 126, 34, 0.28);
+  color: #b65f16;
+}
+
+.complaints-status-resolved {
+  background: rgba(39, 174, 96, 0.12);
+  border-color: rgba(39, 174, 96, 0.22);
+  color: #1f8f4d;
+}
