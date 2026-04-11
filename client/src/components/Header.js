@@ -37,7 +37,7 @@ const Header = () => {
           >
             VeloRoute
           </h1>
-          
+
           <div className="leading-tight">
             <p className="text-xs text-neutral-500">
               {getGreeting()},{` `}
@@ -48,19 +48,17 @@ const Header = () => {
           </div>
         </div>
 
-        <div>
-          <nav className="header-nav" aria-label="Primary navigation">
-            <NavLink to="/" className={navLinkClass} end>
-              Home
-            </NavLink>
+        <nav className="header-nav" aria-label="Primary navigation">
+          <NavLink to="/" className={navLinkClass} end>
+            Home
+          </NavLink>
 
-            {user && (
-              <NavLink to="/welcome" className={navLinkClass}>
-                Dashboard
-              </NavLink>
-            )}
-          </nav>
-        </div>
+          {user && (
+            <NavLink to="/welcome" className={navLinkClass}>
+              Dashboard
+            </NavLink>
+          )}
+        </nav>
 
         <div className="flex items-center gap-4">
           {user && (
