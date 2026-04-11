@@ -17,7 +17,6 @@ export function metricsByEndpoint_afterResponse(_requestParams, _response, _cont
 }
 
 // Simple setup helper: provide credentials for an existing test user.
-// Make sure a user with these credentials exists in the target environment.
 export function setupUser(context, _events, done) {
   context.vars.email = "john@example.com";
   context.vars.password = "Password123";
