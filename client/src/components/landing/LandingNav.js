@@ -18,6 +18,7 @@ export default function LandingNav() {
     { id: "features", label: "Features" },
     { id: "how", label: "How it works" },
     { id: "roles", label: "Roles" },
+    { id: "complaints", label: "Complaints & Feedback" },
     { id: "faq", label: "FAQ" },
   ];
 

@@ -6,6 +6,7 @@ import HowItWorksSection from "../components/landing/HowItWorksSection";
 import RolesSection from "../components/landing/RolesSection";
 import FaqSection from "../components/landing/FaqSection";
 import LandingFooter from "../components/landing/LandingFooter";
+import ComplaintsSection from "../components/landing/ComplaintsSection";
 
 function Landing() {
   const reduceMotion = useReducedMotion();
@@ -39,6 +40,7 @@ function Landing() {
 
       <HowItWorksSection reduceMotion={reduceMotion} hoverLift={hoverLift} />
       <RolesSection reduceMotion={reduceMotion} hoverLift={hoverLift} />
+      <ComplaintsSection reduceMotion={reduceMotion} hoverLift={hoverLift} />
       <FaqSection reduceMotion={reduceMotion} />
       <LandingFooter />
     </div>
