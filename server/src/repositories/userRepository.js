@@ -6,4 +6,12 @@ export const createUser = (payload) => User.create(payload);
 export const updateUserById = (id, update) =>
   User.findByIdAndUpdate(id, update, { new: true });
 export const deleteUserById = (id) => User.findByIdAndDelete(id);
-export const listUsers = () => User.find().select("name email role");
+
+export const listUsers = ({ filter = {}, skip = 0, limit = 10, sort = { createdAt: -1 } } = {}) =>
+  User.find(filter)
+    .select("name email role createdAt")
+    .sort(sort)
+    .skip(skip)
+    .limit(limit);
+
+export const countUsers = (filter = {}) => User.countDocuments(filter);

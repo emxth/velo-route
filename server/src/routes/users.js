@@ -10,15 +10,27 @@ import {
   updateCurrentUserDetails,
   deleteCurrentUser,
   getUserDetailsById,
+  createUserAsAdmin,
+  updateUserByAdmin,
+  deleteUserByAdmin,
 } from "../services/userService.js";
 
 const router = express.Router();
 
-// list users (admin only)
-router.get("/", protect, authorize("admin"), async (_req, res, next) => {
+// list users (admin only) with pagination/search/sort
+router.get("/", protect, authorize("admin"), async (req, res, next) => {
   try {
-    const users = await listUsers();
-    res.json(users);
+    const { search, page, limit, sort } = req.query;
+    const result = await listUsers({ search, page, limit, sort });
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
+// create user (admin only)
+router.post("/", protect, authorize("admin"), async (req, res, next) => {
+  try {
+    const user = await createUserAsAdmin(req.body);
+    res.status(201).json(user);
   } catch (err) { next(err); }
 });
 
@@ -70,6 +82,22 @@ router.put("/:id/permissions", protect, authorize("admin"), async (req, res, nex
     const { user, allowedNav } = await updateUserRole(req.params.id, role);
     logger.info("user_role_updated", { targetUser: user?.email, role: user?.role, allowedNav });
     res.json({ allowedNav, user });
+  } catch (err) { next(err); }
+});
+
+// update user (admin only)
+router.put("/:id", protect, authorize("admin"), async (req, res, next) => {
+  try {
+    const user = await updateUserByAdmin(req.params.id, req.body);
+    res.json(user);
+  } catch (err) { next(err); }
+});
+
+// delete user (admin only)
+router.delete("/:id", protect, authorize("admin"), async (req, res, next) => {
+  try {
+    await deleteUserByAdmin(req.params.id);
+    res.json({ ok: true });
   } catch (err) { next(err); }
 });
 
