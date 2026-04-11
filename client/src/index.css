@@ -248,3 +248,10 @@ h2 {
   margin-bottom: 1rem;
   color: var(--color-text);
 }
+
+.btn-danger {
+  background-color: #ef4444;
+  color: white;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+}
