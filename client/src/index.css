@@ -820,3 +820,134 @@ h2 {
   color: var(--color-primary);
   box-shadow: 0 2px 10px rgba(44, 62, 80, 0.08);
 }
+
+
+/* =========================
+AddUser Page Theme 
+========================= */
+.adduser .card.adduser-card {
+  border: 1px solid rgba(219, 227, 232, 0.95);
+  box-shadow: var(--shadow-sm);
+}
+
+.adduser-card-head {
+  padding-bottom: 0.25rem;
+}
+
+.adduser-muted {
+  margin: 0.35rem 0 0;
+  color: #516070;
+  font-size: 0.92rem;
+}
+
+.adduser-help {
+  margin-top: 0.4rem;
+  color: #5a6979;
+  font-size: 0.85rem;
+}
+
+.adduser-search {
+  min-width: 240px;
+}
+
+.adduser-tablewrap {
+  border: 1px solid rgba(219, 227, 232, 0.95);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.adduser-row:hover {
+  background: rgba(26, 82, 118, 0.04);
+}
+
+.adduser-danger {
+  border-color: rgba(230, 126, 34, 0.55) !important;
+  color: #b65f16 !important;
+}
+
+.adduser-danger:hover {
+  background: rgba(230, 126, 34, 0.10) !important;
+}
+
+/* checkbox block when editing user */
+.adduser-resetbox {
+  padding: 0.85rem;
+  border-radius: var(--radius-md);
+  border: 1px dashed rgba(219, 227, 232, 0.95);
+  background: rgba(244, 246, 247, 0.6);
+}
+
+.adduser-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.adduser-checkbox input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary);
+}
+
+/* Role pill */
+.role-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.78rem;
+  border: 1px solid rgba(219, 227, 232, 0.9);
+  background: rgba(244, 246, 247, 0.8);
+  color: #3c4b5f;
+  text-transform: capitalize;
+}
+
+.role-admin {
+  background: rgba(26, 82, 118, 0.10);
+  border-color: rgba(26, 82, 118, 0.25);
+  color: var(--color-primary);
+}
+
+.role-operator,
+.role-driver {
+  background: rgba(39, 174, 96, 0.10);
+  border-color: rgba(39, 174, 96, 0.22);
+  color: #1f8f4d;
+}
+
+.role-analyst {
+  background: rgba(230, 126, 34, 0.10);
+  border-color: rgba(230, 126, 34, 0.25);
+  color: #b65f16;
+}
+
+/* AddUser: make search + sort controls appear in two lines */
+.adduser-controls {
+  display: grid;
+  gap: 0.6rem;
+  min-width: min(520px, 100%);
+}
+
+.adduser-controls .adduser-search {
+  width: 100%;
+  min-width: 240px;
+}
+
+.adduser-sortrow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+@media (max-width: 520px) {
+  .adduser-controls {
+    min-width: 100%;
+  }
+  .adduser-sortrow {
+    grid-template-columns: 1fr;
+  }
+}

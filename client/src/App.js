@@ -17,6 +17,7 @@ import ComplaintsPage from "./pages/ComplaintsPage";
 import ComplaintDetailPage from "./pages/ComplaintDetailPage";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import AddUser from "./pages/AddUser";
 
 const Unauthorized = () => <div>Unauthorized</div>;
 
@@ -42,6 +43,7 @@ function App() {
 
             <Route element={<ProtectedRoute roles={["admin"]} />}>
               <Route path="/admin" element={<AdminPage />} />
+              <Route path="/add-user" element={<AddUser />} />
             </Route>
 
             <Route element={<ProtectedRoute roles={["operator"]} />}>

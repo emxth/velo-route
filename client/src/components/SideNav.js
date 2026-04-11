@@ -3,9 +3,10 @@ import { Link, useLocation } from "react-router-dom";
 // Add Side Nav items paths here
 const NAV_GROUPS = [
   {
-    category: "User Management",
+    category: "Administration",
     items: [
-      { key: "admin", label: "Admin Area", to: "/admin" },
+      { key: "admin", label: "User Permissions", to: "/admin" },
+      { key: "admin", label: "Add User", to: "/add-user" },
       { key: "operator", label: "Operator Area", to: "/operator" },
     ],
   },

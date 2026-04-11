@@ -17,8 +17,9 @@ const AdminPage = () => {
   const [selectedRole, setSelectedRole] = useState("");
 
   const loadUsers = async () => {
-    const { data } = await api.get("/users"); // returns [{ id, name, email, role }]
-    setUsers(data);
+    const { data } = await api.get("/users", { params: { page: 1, limit: 100 } });
+    const list = Array.isArray(data) ? data : data.data;
+    setUsers(list || []);
   };
 
   useEffect(() => {
