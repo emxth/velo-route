@@ -6,6 +6,9 @@ const AdminViewBooking = () => {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
 	const [statusFilter, setStatusFilter] = useState("ALL");
+	const [transportFilter, setTransportFilter] = useState("ALL");
+	const [timeFilter, setTimeFilter] = useState("ALL"); // ALL or UPCOMING
+	const [vehicleSearch, setVehicleSearch] = useState("");
 	const [confirmingBookingId, setConfirmingBookingId] = useState(null);
 
 	useEffect(() => {
@@ -62,10 +65,23 @@ const AdminViewBooking = () => {
 	};
 
 	const filteredBookings = bookings
-		.filter((booking) =>
-			statusFilter === "ALL" ? true : booking.bookingStatus === statusFilter
-		)
-		.sort((a, b) => new Date(b.departureTime) - new Date(a.departureTime));
+		.filter((booking) => {
+			const matchesStatus = statusFilter === "ALL" || booking.bookingStatus === statusFilter;
+			const matchesTransport = transportFilter === "ALL" || booking.transportType === transportFilter;
+			const matchesTime =
+				timeFilter === "ALL"
+					? true
+					: new Date(booking.departureTime).getTime() > Date.now();
+			const trimmedSearch = vehicleSearch.trim().toLowerCase();
+			const matchesVehicle =
+				!trimmedSearch
+					? true
+					: (booking.vehicleRegistrationNumber || "").toLowerCase().includes(trimmedSearch);
+
+			return matchesStatus && matchesTransport && matchesTime && matchesVehicle;
+		})
+		// Sort by upcoming departure: soonest first
+		.sort((a, b) => new Date(a.departureTime) - new Date(b.departureTime));
 
 	const handleConfirmBooking = async (bookingId) => {
 		try {
@@ -139,23 +155,67 @@ const AdminViewBooking = () => {
 
 	return (
 		<div className="p-6 space-y-4">
-			<div className="flex items-center justify-between gap-3">
+			<div className="flex flex-wrap items-center justify-between gap-3">
 				<h1 className="text-2xl font-bold">All User Bookings</h1>
-				<div className="flex items-center gap-2">
-					<label htmlFor="statusFilter" className="text-sm font-medium text-neutral-700">
-						Filter
-					</label>
-					<select
-						id="statusFilter"
-						value={statusFilter}
-						onChange={(e) => setStatusFilter(e.target.value)}
-						className="rounded border border-neutral-300 px-3 py-2 text-sm"
-					>
-						<option value="ALL">All</option>
-						<option value="PENDING">Pending</option>
-						<option value="CONFIRMED">Confirmed</option>
-						<option value="CANCELLED">Cancelled</option>
-					</select>
+					<div className="flex flex-wrap items-center gap-4">
+					<div className="flex items-center gap-2">
+						<label htmlFor="statusFilter" className="text-sm font-medium text-neutral-700">
+							Status
+						</label>
+						<select
+							id="statusFilter"
+							value={statusFilter}
+							onChange={(e) => setStatusFilter(e.target.value)}
+							className="rounded border border-neutral-300 px-3 py-2 text-sm"
+						>
+							<option value="ALL">All</option>
+							<option value="PENDING">Pending</option>
+							<option value="CONFIRMED">Confirmed</option>
+							<option value="CANCELLED">Cancelled</option>
+						</select>
+					</div>
+					<div className="flex items-center gap-2">
+						<label htmlFor="transportFilter" className="text-sm font-medium text-neutral-700">
+							Transport
+						</label>
+						<select
+							id="transportFilter"
+							value={transportFilter}
+							onChange={(e) => setTransportFilter(e.target.value)}
+							className="rounded border border-neutral-300 px-3 py-2 text-sm"
+						>
+							<option value="ALL">All</option>
+							<option value="BUS">Bus</option>
+							<option value="TRAIN">Train</option>
+						</select>
+					</div>
+						<div className="flex items-center gap-2">
+							<label htmlFor="timeFilter" className="text-sm font-medium text-neutral-700">
+								Date
+							</label>
+							<select
+								id="timeFilter"
+								value={timeFilter}
+								onChange={(e) => setTimeFilter(e.target.value)}
+								className="rounded border border-neutral-300 px-3 py-2 text-sm"
+							>
+								<option value="ALL">All bookings</option>
+								<option value="UPCOMING">Upcoming only (hide past)</option>
+							</select>
+						</div>
+						<div className="flex items-center gap-2">
+							<label htmlFor="vehicleSearch" className="text-sm font-medium text-neutral-700">
+								Vehicle no.
+							</label>
+							<input
+								id="vehicleSearch"
+								type="text"
+								value={vehicleSearch}
+								onChange={(e) => setVehicleSearch(e.target.value)}
+								placeholder="Search by number"
+								className="w-40 rounded border border-neutral-300 px-3 py-2 text-sm"
+							/>
+						</div>
 				</div>
 			</div>
 
@@ -168,6 +228,7 @@ const AdminViewBooking = () => {
 							<tr>
 								<th className="px-4 py-3 text-left">User</th>
 								<th className="px-4 py-3 text-left">Trip</th>
+								<th className="px-4 py-3 text-left">Vehicle</th>
 								<th className="px-4 py-3 text-left">Seats</th>
 								<th className="px-4 py-3 text-left">Booking Status</th>
 								<th className="px-4 py-3 text-left">Payment Status</th>
@@ -193,7 +254,7 @@ const AdminViewBooking = () => {
 								<React.Fragment key={booking._id}>
 									{showDayTitle && (
 										<tr className="border-t bg-neutral-50">
-											<td colSpan={7} className="px-4 py-2 text-xs font-bold tracking-wide text-neutral-700">
+												<td colSpan={8} className="px-4 py-2 text-xs font-bold tracking-wide text-neutral-700">
 												{getDayLabel(booking.departureTime)}
 											</td>
 										</tr>
@@ -209,6 +270,9 @@ const AdminViewBooking = () => {
 											</div>
 											<div className="text-neutral-500">{formatDate(booking.departureTime)}</div>
 										</td>
+											<td className="px-4 py-3">
+												{booking.vehicleRegistrationNumber || "-"}
+											</td>
 										<td className="px-4 py-3">{booking.seatNumbers?.join(", ") || "-"}</td>
 										<td className="px-4 py-3">{booking.bookingStatus}</td>
 										<td className="px-4 py-3">{booking.paymentStatus}</td>
