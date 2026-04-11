@@ -81,7 +81,7 @@ const SideNav = ({ allowed = [] }) => {
     .filter((group) => group.items.length > 0);
 
   return (
-    <aside className="w-64 h-screen p-4 space-y-6 bg-white border-r">
+    <aside className="max-h-screen overflow-y-auto w-64 h-screen p-4 space-y-6 bg-white border-r">
       <h3 className="text-lg font-semibold">Navigation</h3>
 
       {visibleGroups.length === 0 && (
