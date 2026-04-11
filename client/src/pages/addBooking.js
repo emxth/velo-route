@@ -267,7 +267,7 @@ const AddBooking = () => {
       setVehicleDetails(null);
       return;
     }
-
+    //Fetch estimated fare for the selected trip and update state
     const fetchEstimatedFare = async () => {
       try {
         const response = await api.get(`/schedules/${tripId}`);
