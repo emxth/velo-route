@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDown, AlertCircle, CheckCircle } from 'lucide-react';
 import api from '../api/axios';
@@ -15,6 +15,7 @@ const AddBooking = () => {
   const isScheduleAutofill = Boolean(location.state?.prefillBooking);
 
   const [farePerSeat, setFarePerSeat] = useState(0);
+  const [routeDistanceKm, setRouteDistanceKm] = useState(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -42,6 +43,43 @@ const AddBooking = () => {
   const [occupiedSeats, setOccupiedSeats] = useState([]);
   const [loadingOccupiedSeats, setLoadingOccupiedSeats] = useState(false);
   const [vehicleDetails, setVehicleDetails] = useState(null);
+
+  // Derived options for train coach/class selection based on seat capacity
+  const coachOptions = useMemo(() => {
+    if (formData.transportType !== 'TRAIN') return [];
+
+    const capacity = Number(vehicleDetails?.seatCapacity);
+    if (!capacity || Number.isNaN(capacity) || capacity <= 0) return [];
+
+    const seatsPerCoach = 32;
+    const coachCount = Math.ceil(capacity / seatsPerCoach);
+    const options = [];
+    let remainingSeats = capacity;
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+    for (let i = 0; i < coachCount; i += 1) {
+      const coachIndex = i + 1;
+      const seatsThisCoach = Math.min(seatsPerCoach, remainingSeats);
+      remainingSeats -= seatsThisCoach;
+
+      let classLabel;
+      if (coachIndex === 1) classLabel = '1st Class';
+      else if (coachIndex === 2) classLabel = '2nd Class';
+      else if (coachIndex === 3) classLabel = '3rd Class';
+      else {
+        const letter = letters[coachIndex - 4] || String(coachIndex - 3);
+        classLabel = `3rd Class - ${letter}`;
+      }
+
+      const label = `Coach ${coachIndex} - ${classLabel} (${seatsThisCoach} seats)`;
+      options.push({
+        value: `Coach ${coachIndex} - ${classLabel}`,
+        label,
+      });
+    }
+
+    return options;
+  }, [vehicleDetails, formData.transportType]);
 
   // Convert stored date/time to a value usable by datetime-local input
   const toDateTimeLocalValue = (value) => {
@@ -204,10 +242,19 @@ const AddBooking = () => {
   // Update form state and perform real-time validation for key fields
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData(prev => {
+      const updated = {
+        ...prev,
+        [name]: value,
+      };
+
+      // Clear coach selection when switching away from train
+      if (name === 'transportType' && value !== 'TRAIN') {
+        updated.coachNumber = '';
+      }
+
+      return updated;
+    });
     
     // Real-time validation for phone number
     if (name === 'phoneNumber') {
@@ -258,6 +305,29 @@ const AddBooking = () => {
     }));
   }, [farePerSeat]);
 
+  // Determine train class from selected coach label (1st/2nd/3rd)
+  const getTrainClassFromCoach = (coachLabel) => {
+    if (!coachLabel) return null;
+    if (coachLabel.includes('1st Class')) return 'FIRST';
+    if (coachLabel.includes('2nd Class')) return 'SECOND';
+    return 'THIRD';
+  };
+
+  // For train bookings, adjust fare per seat based on route distance and selected class
+  useEffect(() => {
+    if (formData.transportType !== 'TRAIN') return;
+    if (!routeDistanceKm || !formData.coachNumber) return;
+
+    const trainClass = getTrainClassFromCoach(formData.coachNumber);
+    let ratePerKm;
+    if (trainClass === 'FIRST') ratePerKm = 100;
+    else if (trainClass === 'SECOND') ratePerKm = 60;
+    else ratePerKm = 20;
+
+    const newFarePerSeat = routeDistanceKm * ratePerKm;
+    setFarePerSeat(newFarePerSeat);
+  }, [formData.transportType, formData.coachNumber, routeDistanceKm]);
+
   // Load estimated fare and vehicle details when tripId changes
   useEffect(() => {
     const tripId = formData.tripId.trim();
@@ -265,6 +335,7 @@ const AddBooking = () => {
     if (!tripId) {
       setFarePerSeat(0);
       setVehicleDetails(null);
+      setRouteDistanceKm(null);
       return;
     }
     //Fetch estimated fare for the selected trip and update state
@@ -273,9 +344,11 @@ const AddBooking = () => {
         const response = await api.get(`/schedules/${tripId}`);
         const schedule = response.data?.schedule || response.data;
         const estimatedFare = Number(schedule?.routeId?.estimatedFare) || 0;
+        const distanceKm = Number(schedule?.routeId?.distance);
         const vehicle = schedule?.vehicleID || {};
 
         setFarePerSeat(estimatedFare);
+        setRouteDistanceKm(!Number.isNaN(distanceKm) && distanceKm > 0 ? distanceKm : null);
         setVehicleDetails({
           registrationNumber: vehicle.registrationNumber || 'N/A',
           category: vehicle.category || 'N/A',
@@ -290,6 +363,7 @@ const AddBooking = () => {
       } catch (err) {
         console.error('Failed to fetch route estimated fare:', err);
         setFarePerSeat(0);
+        setRouteDistanceKm(null);
         setVehicleDetails(null);
       }
     };
@@ -502,20 +576,33 @@ const AddBooking = () => {
               {formData.transportType === 'TRAIN' && (
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Coach Number <span className="text-red-500">*</span>
+                    Coach / Class <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
+                  <select
                     name="coachNumber"
                     value={formData.coachNumber}
                     onChange={handleInputChange}
-                    placeholder="e.g., A1, B2"
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition ${
+                    disabled={coachOptions.length === 0}
+                    className={`w-full px-4 py-2.5 border rounded-lg bg-white focus:outline-none focus:ring-2 transition ${
                       errors.coachNumber
                         ? 'border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-cyan-500'
+                        : coachOptions.length === 0
+                          ? 'border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed'
+                          : 'border-gray-300 focus:ring-cyan-500'
                     }`}
-                  />
+                  >
+                    <option value="">Select coach and class</option>
+                    {coachOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  {coachOptions.length === 0 && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Seat capacity for this train is not available.
+                    </p>
+                  )}
                   {errors.coachNumber && (
                     <p className="text-red-500 text-sm mt-1">{errors.coachNumber}</p>
                   )}
