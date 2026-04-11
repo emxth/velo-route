@@ -208,8 +208,40 @@ export const getMyBookings = async (userId) => {
   });
 };
 
-export const getAllBookings = () =>
-  bookingRepo.findAll();
+export const getAllBookings = async () => {
+	const bookings = await bookingRepo.findAll();
+
+	if (!bookings || bookings.length === 0) {
+		return bookings;
+	}
+
+	const tripIds = bookings
+		.map((b) => b.tripId)
+		.filter(Boolean);
+
+	if (tripIds.length === 0) {
+		return bookings;
+	}
+
+	const schedules = await Schedule.find({ _id: { $in: tripIds } })
+		.populate("vehicleID", "registrationNumber")
+		.lean();
+
+	const scheduleMap = new Map(
+		schedules.map((s) => [s._id.toString(), s]),
+	);
+
+	return bookings.map((booking) => {
+		const plain = booking.toObject ? booking.toObject() : booking;
+		const schedule = scheduleMap.get(String(booking.tripId));
+		const registrationNumber = schedule?.vehicleID?.registrationNumber || null;
+
+		return {
+			...plain,
+			vehicleRegistrationNumber: registrationNumber,
+		};
+	});
+};
 
 export const getOccupiedSeats = async ({ tripId, transportType, fromLocation, toLocation, departureTime, coachNumber, excludeBookingId }) => {
   if (!tripId || !transportType || !fromLocation || !toLocation || !departureTime) {
@@ -451,6 +483,10 @@ export const updateBooking = async (bookingId, userId, data) => {
     throw new ApiError(400, "Only pending bookings can be updated");
   }
 
+  if (booking.paymentStatus === "PAID" || booking.paymentStatus === "REFUNDED") {
+    throw new ApiError(400, "Paid bookings cannot be updated");
+  }
+
   const { seatNumbers, phoneNumber, departureTime, coachNumber } = data;
 
   const validatedDepartureDate = departureTime
@@ -570,6 +606,8 @@ export const adminRejectBooking = async (bookingId, adminUserId, reason) => {
     throw new ApiError(400, "Reason is required for admin rejection");
   }
 
+  const cleanReason = reason.trim();
+
   const departureTimeMs = new Date(booking.departureTime).getTime();
   if (Number.isNaN(departureTimeMs)) {
     throw new ApiError(400, "Invalid departure time on booking");
@@ -589,10 +627,21 @@ export const adminRejectBooking = async (bookingId, adminUserId, reason) => {
     booking.paymentStatus = "REFUNDED";
   }
 
-  markCancelled(booking, "ADMIN_REJECT", reason.trim(), "ADMIN", adminUserId);
+  markCancelled(booking, "ADMIN_REJECT", cleanReason, "ADMIN", adminUserId);
   await booking.save();
 
   logger.info(`Booking rejected by admin: ${booking._id} by user ${adminUserId}`);
+
+  // Send SMS to passenger with rejection reason
+  try {
+    await sendSMS(
+      booking.phoneNumber,
+      `Your ${booking.transportType} booking on ${booking.departureTime} was REJECTED. Reason: ${cleanReason}`
+    );
+  } catch (err) {
+    logger.error(`Failed to send rejection SMS for booking ${booking._id}: ${err.message}`);
+  }
+
   return booking;
 };
 
@@ -606,6 +655,8 @@ export const adminCancelBooking = async (bookingId, adminUserId, reason) => {
   if (!reason || !reason.trim()) {
     throw new ApiError(400, "Reason is required for admin cancellation");
   }
+
+  const cleanReason = reason.trim();
 
   const departureTimeMs = new Date(booking.departureTime).getTime();
   if (Number.isNaN(departureTimeMs)) {
@@ -626,9 +677,20 @@ export const adminCancelBooking = async (bookingId, adminUserId, reason) => {
     booking.paymentStatus = "REFUNDED";
   }
 
-  markCancelled(booking, "ADMIN_CANCEL", reason.trim(), "ADMIN", adminUserId);
+  markCancelled(booking, "ADMIN_CANCEL", cleanReason, "ADMIN", adminUserId);
   await booking.save();
 
   logger.info(`Booking cancelled by admin: ${booking._id} by user ${adminUserId}`);
+
+  // Send SMS to passenger with cancellation reason
+  try {
+    await sendSMS(
+      booking.phoneNumber,
+      `Your ${booking.transportType} booking on ${booking.departureTime} was CANCELLED by admin. Reason: ${cleanReason}`
+    );
+  } catch (err) {
+    logger.error(`Failed to send cancellation SMS for booking ${booking._id}: ${err.message}`);
+  }
+
   return booking;
 };
