@@ -28,7 +28,7 @@ const Header = () => {
 
   return (
     <header className="bg-white border-b shadow-sm">
-      <div className="flex items-center justify-between max-w-screen-xl gap-4 py-3 mx-auto">
+      <div className="flex items-center justify-between max-w-screen-xl gap-4 px-3 py-3 mx-auto">
         <div className="flex items-center gap-6 leading-tight">
           <h1
             className="text-lg font-semibold cursor-pointer text-neutral-900"
