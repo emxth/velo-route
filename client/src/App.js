@@ -3,6 +3,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ProtectedLayout from "./layouts/ProtectedLayout";
 import ToastListener from "./components/ToastListener";
 
+import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminPage from "./pages/AdminPage";
@@ -26,7 +27,7 @@ function App() {
       <Header />
       <Routes>
         {/* Public routes */}
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
