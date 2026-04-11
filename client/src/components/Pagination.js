@@ -1,6 +1,7 @@
+// components/Pagination.jsx
 const Pagination = ({ page, totalPages, onPageChange }) => {
   const getPageNumbers = () => {
-    const delta = 2; // show 2 pages on each side of current
+    const delta = 2;
     const range = [];
     const rangeWithDots = [];
     let l;
@@ -32,45 +33,27 @@ const Pagination = ({ page, totalPages, onPageChange }) => {
 
   const pageNumbers = getPageNumbers();
 
-  // Don't render if only one page
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex justify-center items-center gap-2 mt-8">
-      {/* Previous button */}
+    <div className="flex justify-center items-center gap-3 mt-10">
       <button
         onClick={() => onPageChange(page - 1)}
         disabled={page === 1}
-        className="px-3 py-2 text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-50 transition"
+        className="px-5 py-2 rounded-xl border border-neutral-200 text-neutral-600 font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50 transition-all"
       >
-        Previous
+        ← Previous
       </button>
-
-      {/* Page numbers */}
-      {pageNumbers.map((p, idx) => (
-        <button
-          key={idx}
-          onClick={() => typeof p === "number" && onPageChange(p)}
-          className={`px-3 py-2 text-sm rounded-lg transition ${
-            p === page
-              ? "bg-primary-600 text-white"
-              : p === "..."
-                ? "cursor-default bg-transparent"
-                : "border hover:bg-neutral-50"
-          }`}
-          disabled={p === "..."}
-        >
-          {p}
-        </button>
-      ))}
-
-      {/* Next button */}
+      <span className="text-neutral-600 text-sm">
+        Page <strong className="text-primary-600">{page}</strong> of{" "}
+        {totalPages}
+      </span>
       <button
         onClick={() => onPageChange(page + 1)}
         disabled={page === totalPages}
-        className="px-3 py-2 text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-50 transition"
+        className="px-5 py-2 rounded-xl border border-neutral-200 text-neutral-600 font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50 transition-all"
       >
-        Next
+        Next →
       </button>
     </div>
   );

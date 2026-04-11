@@ -63,7 +63,7 @@ export const validateVehicleForm = (formData, isUpdate = false) => {
       const seats = Number(formData.seatCapacity);
       if (isNaN(seats) || seats < 1) {
         errors.seatCapacity = "Seat capacity must be at least 1";
-      } else if (seats > 100) {
+      } else if (seats > 60) {
         errors.seatCapacity = "Seat capacity cannot exceed 60";
       }
     }

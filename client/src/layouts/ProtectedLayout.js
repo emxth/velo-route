@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import SideNav from "../components/SideNav";
+import ToastListener from "../components/ToastListener";
 
 // Add User default navigations here (if not set, will fallback to these based on role)
 const ADMIN_DEFAULT_NAV = [
@@ -48,6 +49,7 @@ const ProtectedLayout = () => {
 
   return (
     <div className="flex min-h-screen bg-neutral-50">
+      <ToastListener />
       <SideNav allowed={allowedNav} />
       <main className="flex-1 p-8">
         <Outlet />
