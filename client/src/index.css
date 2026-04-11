@@ -140,6 +140,61 @@ textarea {
   box-shadow: var(--shadow-sm);
 }
 
+/* Slow glowing ring around CTA button */
+.btn-glow {
+  position: relative;
+  overflow: visible;
+  isolation: isolate;
+}
+
+.btn-glow::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  z-index: -1;
+
+  /* multi-stop glow */
+  background: radial-gradient(
+    circle,
+    rgba(39, 174, 96, 0.35) 0%,
+    rgba(26, 82, 118, 0.22) 45%,
+    rgba(39, 174, 96, 0.0) 70%
+  );
+
+  filter: blur(10px);
+  opacity: 0.55;
+  transform: scale(0.98);
+  animation: btnGlowPulse 2.6s ease-in-out infinite;
+}
+
+@keyframes btnGlowPulse {
+  0%, 100% {
+    opacity: 0.40;
+    transform: scale(0.96);
+    filter: blur(10px);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.04);
+    filter: blur(14px);
+  }
+}
+
+/* Slightly stronger on hover/focus */
+.btn-glow:hover::before,
+.btn-glow:focus-visible::before {
+  opacity: 1;
+}
+
+/* Accessibility: respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .btn-glow::before {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
 .badge {
   display: inline-flex;
   align-items: center;
@@ -363,7 +418,7 @@ h2 {
 .landing-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 1rem;
   margin: 1.5rem 0;
 }
 

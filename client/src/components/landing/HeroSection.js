@@ -55,8 +55,8 @@ export default function HeroSection({ reduceMotion, fadeUp, stagger, hoverLift }
             <Link className="btn btn-primary" to="/login">
               Get Started
             </Link>
-            <Link className="btn btn-outline" to="/schedules">
-              Book Now
+            <Link className="btn btn-outline btn-glow" to="/schedules">
+              Schedule Now
             </Link>
           </motion.div>
 
