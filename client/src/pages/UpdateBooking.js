@@ -36,6 +36,7 @@ const UpdateBooking = () => {
     const [seatCapacity, setSeatCapacity] = useState(null);
     const [seatCapacityLoading, setSeatCapacityLoading] = useState(false);
     const [routeDistanceKm, setRouteDistanceKm] = useState(null);
+    const [ratePerKm, setRatePerKm] = useState(null);
 
     // Local form state for editable booking fields
     const [formData, setFormData] = useState({
@@ -132,6 +133,7 @@ const UpdateBooking = () => {
                 setSeatCapacity(null);
                 setSeatCapacityLoading(false);
                 setRouteDistanceKm(null);
+                setRatePerKm(null);
                 return;
             }
 
@@ -147,10 +149,12 @@ const UpdateBooking = () => {
 
                 const distance = Number(route.distance);
                 setRouteDistanceKm(Number.isFinite(distance) && distance > 0 ? distance : null);
+                setRatePerKm(null);
             } catch (err) {
                 console.error('Failed to fetch seat capacity:', err);
                 setSeatCapacity(null);
                 setRouteDistanceKm(null);
+                setRatePerKm(null);
             }
             finally {
                 setSeatCapacityLoading(false);
@@ -174,12 +178,14 @@ const UpdateBooking = () => {
         if (!routeDistanceKm || !formData.coachNumber) return;
 
         const trainClass = getTrainClassFromCoach(formData.coachNumber);
-        let ratePerKm;
-        if (trainClass === 'FIRST') ratePerKm = 100;
-        else if (trainClass === 'SECOND') ratePerKm = 60;
-        else ratePerKm = 20;
+        let nextRatePerKm;
+        if (trainClass === 'FIRST') nextRatePerKm = 100;
+        else if (trainClass === 'SECOND') nextRatePerKm = 60;
+        else nextRatePerKm = 20;
 
-        const newFarePerSeat = routeDistanceKm * ratePerKm;
+        setRatePerKm(nextRatePerKm);
+
+        const newFarePerSeat = routeDistanceKm * nextRatePerKm;
         setFarePerSeat(newFarePerSeat);
 
         // Recalculate amount for currently selected seats with new fare
@@ -591,6 +597,8 @@ const UpdateBooking = () => {
                 occupiedSeats={occupiedSeats}
                 seatCapacity={seatCapacity}
                 coachNumber={booking?.transportType === 'TRAIN' ? formData.coachNumber : undefined}
+                routeDistanceKm={booking?.transportType === 'TRAIN' ? routeDistanceKm : undefined}
+                ratePerKm={booking?.transportType === 'TRAIN' ? ratePerKm : undefined}
             />
         </div>
     );
