@@ -77,6 +77,19 @@ describe("Vehicle Service Unit Tests", () => {
     },
   };
 
+  // Helper to create a mock vehicle with getEffectiveStatus method
+  const createMockVehicle = (overrides = {}) => {
+    const mock = {
+      _id: validVehicleId,
+      ...validVehicleData,
+      ...overrides,
+      departmentDetails: { status: "active" },
+      toObject: () => ({ ...mock, ...overrides }),
+      getEffectiveStatus: jest.fn().mockReturnValue("AVAILABLE"),
+    };
+    return mock;
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -88,13 +101,14 @@ describe("Vehicle Service Unit Tests", () => {
     test("should create vehicle successfully with photo", async () => {
       findDepartmentByIdMock.mockResolvedValue({ _id: validDepartmentId });
       findByRegistrationNumberMock.mockResolvedValue(null);
-      createMock.mockResolvedValue({
+      const createdVehicle = {
         _id: validVehicleId,
         ...validVehicleData,
         vehiclePhoto: mockFile.path,
         cloudinaryId: mockFile.filename,
         createdBy: adminId,
-      });
+      };
+      createMock.mockResolvedValue(createdVehicle);
 
       const result = await createVehicle(adminId, validVehicleData, mockFile);
 
@@ -102,19 +116,11 @@ describe("Vehicle Service Unit Tests", () => {
       expect(result._id).toBe(validVehicleId);
     });
 
-    test("should create vehicle successfully without photo", async () => {
-      findDepartmentByIdMock.mockResolvedValue({ _id: validDepartmentId });
-      findByRegistrationNumberMock.mockResolvedValue(null);
-      createMock.mockResolvedValue({
-        _id: validVehicleId,
-        ...validVehicleData,
-        createdBy: adminId,
-      });
-
-      const result = await createVehicle(adminId, validVehicleData, null);
-
-      expect(createMock).toHaveBeenCalled();
-      expect(result._id).toBe(validVehicleId);
+    test("should throw error if no photo provided", async () => {
+      await expect(
+        createVehicle(adminId, validVehicleData, null),
+      ).rejects.toThrow(new AppError("Vehicle photo is required", 400));
+      expect(createMock).not.toHaveBeenCalled();
     });
 
     test("should throw error if department not found", async () => {
@@ -141,17 +147,16 @@ describe("Vehicle Service Unit Tests", () => {
   // GET VEHICLE BY ID
   // ==========================================
   describe("getVehicleById", () => {
-    test("should return vehicle when found", async () => {
-      const mockVehicle = {
-        _id: validVehicleId,
-        registrationNumber: "ABC-1234",
-      };
+    test("should return vehicle with computed status", async () => {
+      const mockVehicle = createMockVehicle();
+      mockVehicle.getEffectiveStatus.mockReturnValue("UNDER MAINTENANCE");
       findByIdMock.mockResolvedValue(mockVehicle);
 
       const result = await getVehicleById(validVehicleId);
 
       expect(findByIdMock).toHaveBeenCalledWith(validVehicleId);
-      expect(result).toEqual(mockVehicle);
+      expect(mockVehicle.getEffectiveStatus).toHaveBeenCalledWith("active");
+      expect(result.status).toBe("UNDER MAINTENANCE");
     });
 
     test("should throw error if ID format is invalid", async () => {
@@ -170,19 +175,24 @@ describe("Vehicle Service Unit Tests", () => {
   // GET ALL VEHICLES
   // ==========================================
   describe("getAllVehicles", () => {
-    test("should return paginated vehicles", async () => {
+    test("should return paginated vehicles with computed status", async () => {
       const mockVehicles = [
-        { _id: "1", registrationNumber: "ABC-123" },
-        { _id: "2", registrationNumber: "DEF-456" },
+        createMockVehicle({ registrationNumber: "ABC-111" }),
+        createMockVehicle({ registrationNumber: "ABC-222" }),
       ];
-      findAllMock.mockResolvedValue(mockVehicles);
-      countDocumentsMock.mockResolvedValue(25);
+      mockVehicles[0].getEffectiveStatus.mockReturnValue("UNAVAILABLE");
+      mockVehicles[1].getEffectiveStatus.mockReturnValue("AVAILABLE");
 
-      const result = await getAllVehicles(2, 10);
+      findAllMock.mockResolvedValue(mockVehicles);
+      countDocumentsMock.mockResolvedValue(2);
+
+      const result = await getAllVehicles(1, 10);
 
       expect(findAllMock).toHaveBeenCalled();
-      expect(result.data).toEqual(mockVehicles);
-      expect(result.pagination.page).toBe(2);
+      expect(result.data).toHaveLength(2);
+      expect(result.data[0].status).toBe("UNAVAILABLE");
+      expect(result.data[1].status).toBe("AVAILABLE");
+      expect(result.pagination.total).toBe(2);
     });
 
     test("should handle empty result set", async () => {
@@ -204,6 +214,8 @@ describe("Vehicle Service Unit Tests", () => {
       _id: validVehicleId,
       registrationNumber: "ABC-1234",
       cloudinaryId: "old-cloudinary-id",
+      departmentDetails: { status: "active" },
+      toObject: () => existingVehicle,
     };
 
     test("should update vehicle successfully", async () => {

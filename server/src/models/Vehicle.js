@@ -4,7 +4,7 @@ const vehicleSchema = new mongoose.Schema(
   {
     vehiclePhoto: {
       type: String,
-      required: false,
+      required: true,
     },
 
     cloudinaryId: {
@@ -161,14 +161,39 @@ vehicleSchema.index({ "insurance.expiryDate": 1 });
 vehicleSchema.index({ "fitness.expiryDate": 1 });
 vehicleSchema.index({ "nextMaintenanceDue.date": 1 });
 
-// Virtual to get department details
+// Add 'status' field to departmentDetails virtual (so we can check if department is inactive)
 vehicleSchema.virtual("departmentDetails", {
   ref: "Department",
   localField: "department",
   foreignField: "_id",
   justOne: true,
-  options: { select: "name region managerName contactNumber" },
+  options: { select: "name region managerName contactNumber status" }, // ← added status
 });
+
+// Add instance method to compute effective status based on rules
+vehicleSchema.methods.getEffectiveStatus = function (departmentStatus) {
+  const now = new Date();
+
+  // 1. Department inactive → UNAVAILABLE
+  if (departmentStatus === "inactive") return "UNAVAILABLE";
+
+  // 2. Insurance or fitness expired → UNAVAILABLE
+  if (this.insurance?.expiryDate && new Date(this.insurance.expiryDate) <= now)
+    return "UNAVAILABLE";
+  if (this.fitness?.expiryDate && new Date(this.fitness.expiryDate) <= now)
+    return "UNAVAILABLE";
+
+  // 3. Next maintenance due date passed → UNDER MAINTENANCE
+  if (
+    this.nextMaintenanceDue?.date &&
+    new Date(this.nextMaintenanceDue.date) <= now
+  ) {
+    return "UNDER MAINTENANCE";
+  }
+
+  // 4. Otherwise keep the stored status (or default AVAILABLE)
+  return this.status || "AVAILABLE";
+};
 
 // Virtual to get creator details
 vehicleSchema.virtual("creator", {
@@ -186,16 +211,6 @@ vehicleSchema.virtual("updater", {
   foreignField: "_id",
   justOne: true,
   options: { select: "name email role" },
-});
-
-// Middleware to check if insurance or fitness is expired
-vehicleSchema.pre("save", function (next) {
-  const now = new Date();
-
-  // Auto-update status if insurance or fitness expired
-  if (this.insurance.expiryDate < now || this.fitness.expiryDate < now) {
-    this.status = "UNAVAILABLE";
-  }
 });
 
 // Method to check if vehicle is available

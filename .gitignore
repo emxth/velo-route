@@ -47,3 +47,7 @@ dump/
 # Misc
 *.tgz
 *.orig
+
+# Generated test images
+test-image.jpg
+tests/performance-tests/test-image.jpg

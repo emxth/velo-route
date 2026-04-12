@@ -8,6 +8,8 @@ const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 export const createVehicle = async (adminId, data, file) => {
   // Database existence checks (can't be done in middleware)
+  if (!file) throw new AppError("Vehicle photo is required", 400);
+
   if (!isValidObjectId(data.department)) {
     throw new AppError("Invalid department ID format", 400);
   }
@@ -50,26 +52,22 @@ export const createVehicle = async (adminId, data, file) => {
   return vehicle;
 };
 
-export const getVehicleById = async (id) => {
-  if (!isValidObjectId(id)) {
-    throw new AppError("Invalid vehicle ID format", 400);
-  }
-
-  const vehicle = await vehicleRepo.findById(id);
-  if (!vehicle) {
-    throw new AppError("Vehicle not found", 404);
-  }
-
-  return vehicle;
-};
-
 export const getAllVehicles = async (page = 1, limit = 10) => {
   const skip = (page - 1) * limit;
   const vehicles = await vehicleRepo.findAll({}, skip, limit);
   const total = await vehicleRepo.countDocuments();
 
+  // Compute effective status for each vehicle
+  const vehiclesWithStatus = vehicles.map((vehicle) => {
+    const deptStatus = vehicle.departmentDetails?.status || "active";
+    const effectiveStatus = vehicle.getEffectiveStatus(deptStatus);
+    const vehicleObj = vehicle.toObject();
+    vehicleObj.status = effectiveStatus;
+    return vehicleObj;
+  });
+
   return {
-    data: vehicles,
+    data: vehiclesWithStatus,
     pagination: {
       page: parseInt(page),
       limit: parseInt(limit),
@@ -77,6 +75,21 @@ export const getAllVehicles = async (page = 1, limit = 10) => {
       pages: Math.ceil(total / limit),
     },
   };
+};
+
+export const getVehicleById = async (id) => {
+  if (!isValidObjectId(id))
+    throw new AppError("Invalid vehicle ID format", 400);
+
+  const vehicle = await vehicleRepo.findById(id);
+  if (!vehicle) throw new AppError("Vehicle not found", 404);
+
+  const deptStatus = vehicle.departmentDetails?.status || "active";
+  const effectiveStatus = vehicle.getEffectiveStatus(deptStatus);
+  const vehicleObj = vehicle.toObject();
+  vehicleObj.status = effectiveStatus;
+
+  return vehicleObj;
 };
 
 export const updateVehicle = async (id, adminId, data, file) => {

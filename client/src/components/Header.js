@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const getGreeting = () => {
@@ -12,6 +12,7 @@ const getGreeting = () => {
 const Header = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const initials = useMemo(() => {
     if (!user?.email) return "";
@@ -23,16 +24,47 @@ const Header = () => {
     navigate("/login");
   };
 
+  const navLinkClass = (active) =>
+    `header-nav-link ${active ? "header-nav-link--active" : ""}`;
+
+  const isHome = location.pathname === "/";
+  const isDashboardActive = !!user && !isHome; // stays active everywhere except "/"
+
   return (
     <header className="bg-white border-b shadow-sm">
-      <div className="flex items-center justify-between max-w-screen-xl gap-4 px-4 py-3 mx-auto">
-        <div className="leading-tight">
-          <p className="text-xs text-neutral-500">
-            {getGreeting()},{` `}
-            {user ? user.name : "Guest"}
-          </p>
-          <h1 className="text-lg font-semibold text-neutral-900">VeloRoute</h1>
+      <div className="flex items-center justify-between max-w-screen-xl gap-4 px-3 py-3 mx-auto">
+        <div className="flex items-center gap-6 leading-tight">
+          <div
+            onClick={() => navigate("/")}
+            title="Go to Home"
+            className="inline-flex items-center gap-[10px] cursor-pointer select-none"
+          >
+            <img
+              src="/logo.png"
+              alt="VeloRoute logo"
+              className="w-[54px] object-contain rounded-[10px]"
+            />
+          </div>
+
+          <div className="leading-tight">
+            <p className="text-xs text-neutral-500">
+              {getGreeting()},{` `}
+            </p>
+            <p className="text-xs text-neutral-500">{user ? user.name : "Guest"}</p>
+          </div>
         </div>
+
+        <nav className="header-nav" aria-label="Primary navigation">
+          {/* Home: active ONLY on "/" */}
+          <NavLink to="/" className={({ isActive }) => navLinkClass(isActive)} end>
+            Home
+          </NavLink>
+
+          {/* Dashboard: active for all non-home routes when logged in */}
+          <NavLink to="/welcome" className={() => navLinkClass(isDashboardActive)}>
+            Dashboard
+          </NavLink>
+        </nav>
 
         <div className="flex items-center gap-4">
           {user && (
@@ -44,12 +76,13 @@ const Header = () => {
               >
                 {initials}
               </button>
-              <div className="leading-tight">
+              <div className="leading-tight cursor-pointer" onClick={() => navigate("/profile")}>
                 <div className="text-sm font-semibold text-neutral-900">{user.name}</div>
                 <div className="text-xs text-neutral-600">{user.email}</div>
               </div>
             </div>
           )}
+
           {user ? (
             <button className="btn-outline" onClick={handleLogout}>
               Logout

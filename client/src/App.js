@@ -3,6 +3,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ProtectedLayout from "./layouts/ProtectedLayout";
 import ToastListener from "./components/ToastListener";
 
+import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminPage from "./pages/AdminPage";
@@ -28,6 +29,9 @@ import AdminRouteManagement from "./pages/admin/AdminRouteManagement";
 import AdminScheduleManagement from "./pages/admin/AdminScheduleManagement";
 import RouteScheduleManagement from "./pages/admin/AdminDashboard";
 
+import AddUser from "./pages/AddUser";
+import ViewComplaintsPage from "./pages/ViewComplaintsPage";
+import AdminPermissions from "./pages/AdminPermissions";
 
 const Unauthorized = () => <div>Unauthorized</div>;
 
@@ -38,7 +42,7 @@ function App() {
       <Header />
       <Routes>
         {/* Public routes */}
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -58,7 +62,9 @@ function App() {
               <Route path="/admin/dashboard" element={<RouteScheduleManagement />} />
               <Route path="/admin/routes" element={<AdminRouteManagement />} />
               <Route path="/admin/schedules" element={<AdminScheduleManagement />} />
-
+              <Route path="/admin-permissions" element={<AdminPermissions />} />
+              <Route path="/add-user" element={<AddUser />} />
+              <Route path="/view-complaints" element={<ViewComplaintsPage />} />
             </Route>
 
             <Route element={<ProtectedRoute roles={["operator"]} />}>

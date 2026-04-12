@@ -3,16 +3,20 @@ config:
   phases:
     - duration: 20
       arrivalRate: 1
+  processor: "./vehicle-upload-processor.cjs"
   defaults:
     headers:
-      Content-Type: "application/json"
+      Accept: "application/json"
 
 scenarios:
   - name: "CTB Bus Passenger Vehicle CRUD Flow"
     flow:
+
       # ---------------- LOGIN ----------------
       - post:
           url: "/api/auth/login"
+          headers:
+            Content-Type: "application/json"
           json:
             email: "john@example.com"
             password: "admin@123"
@@ -21,107 +25,80 @@ scenarios:
               as: "authToken"
 
       - log: "Login successful"
+      - think: 1
 
-      - think: 2
-
-      # CREATE CTB DEPARTMENT
+      # ---------------- CREATE DEPARTMENT ----------------
       - post:
           url: "/api/departments"
           headers:
             Authorization: "Bearer {{ authToken }}"
+            Content-Type: "application/json"
           json:
-            name: "CTB Transport Dept {{ $randomString(8) }}"
-            description: "Ceylon Transport Board bus operations"
-            managerName: "Sirisena CTB Manager"
+            name: "CTB Dept {{ $randomString(6) }}"
+            description: "Bus operations"
+            managerName: "Sirisena"
             contactNumber: "0777771234"
-            email: "ctbdept{{ $randomNumber(10000,99999) }}@test.com"
-            address: "789 CTB Central Bus Stand, Colombo"
+            email: "ctb{{ $randomNumber(1000,9999) }}@test.com"
+            address: "Colombo"
             region: "Western"
             status: "active"
           capture:
             - json: "$._id"
               as: "deptId"
 
-      - log: "CTB Department Created: id={{ deptId }}"
+      - log: "Department Created: {{ deptId }}"
+      - think: 1
 
-      - think: 2
+      # ---------------- CREATE VEHICLE ----------------
+      - function: "createVehicleWithImage"
 
-      # CREATE CTB BUS
-      - post:
-          url: "/api/vehicles"
-          headers:
-            Authorization: "Bearer {{ authToken }}"
-          json:
-            registrationNumber: "CTB-{{ $randomNumber(10000,99999) }}"
-            category: "Bus"
-            type: "Passenger"
-            brand: "Ashok Leyland"
-            model: "Viking"
-            yearOfManufacture: 2021
-            seatCapacity: 55
-            department: "{{ deptId }}"
-            insurance:
-              provider: "Sri Lanka Insurance"
-              policyNumber: "INS-CTB-{{ $randomNumber(10000,99999) }}"
-              type: "Comprehensive"
-              startDate: "2026-01-01T00:00:00.000Z"
-              expiryDate: "2027-01-01T00:00:00.000Z"
-            fitness:
-              certificateNumber: "FIT-CTB-{{ $randomNumber(10000,99999) }}"
-              issueDate: "2026-01-01T00:00:00.000Z"
-              expiryDate: "2027-01-01T00:00:00.000Z"
-            status: "AVAILABLE"
-          capture:
-            - json: "$._id"
-              as: "vehicleId"
+      - log: "Vehicle Created: {{ vehicleId }}"
+      - think: 1
 
-      - log: "CTB Bus Created: id={{ vehicleId }}"
+      # ---------------- SAFE GUARD ----------------
+      - log: "Checking vehicleId before next steps: {{ vehicleId }}"
 
-      - think: 2
-
-      # GET ALL VEHICLES
+      # ---------------- GET ALL VEHICLES ----------------
       - get:
           url: "/api/vehicles?page=1&limit=10"
           headers:
             Authorization: "Bearer {{ authToken }}"
 
       - log: "Fetched all vehicles"
+      - think: 1
 
-      - think: 2
-
-      # GET VEHICLE BY ID
+      # ---------------- GET BY ID ----------------
       - get:
           url: "/api/vehicles/{{ vehicleId }}"
           headers:
             Authorization: "Bearer {{ authToken }}"
 
-      - log: "Fetched CTB bus by ID"
+      - log: "Fetched vehicle by ID"
+      - think: 1
 
-      - think: 2
-
-      # UPDATE VEHICLE
+      # ---------------- UPDATE ----------------
       - put:
           url: "/api/vehicles/{{ vehicleId }}"
           headers:
             Authorization: "Bearer {{ authToken }}"
+            Content-Type: "application/json"
           json:
             status: "UNDER MAINTENANCE"
             lastMaintenance:
               date: "2026-02-15T00:00:00.000Z"
-              maintenanceType: "Engine Overhaul"
+              maintenanceType: "Engine"
               odometer: 45000
             nextMaintenanceDue:
               date: "2026-05-15T00:00:00.000Z"
               odometer: 50000
 
-      - log: "CTB Bus Updated: id={{ vehicleId }}"
+      - log: "Vehicle Updated"
+      - think: 1
 
-      - think: 2
-
-      # DELETE VEHICLE
+      # ---------------- DELETE ----------------
       - delete:
           url: "/api/vehicles/{{ vehicleId }}"
           headers:
             Authorization: "Bearer {{ authToken }}"
 
-      - log: "CTB Bus Deleted: id={{ vehicleId }}"
+      - log: "Vehicle Deleted"
