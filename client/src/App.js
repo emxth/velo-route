@@ -33,16 +33,13 @@ import AddVehiclePage from "./pages/VehicleManagement/AddVehiclePage";
 import AllVehiclesPage from "./pages/VehicleManagement/AllVehiclesPage";
 import VehicleDetailsPage from "./pages/VehicleManagement/VehicleDetailsPage";
 import UpdateVehiclePage from "./pages/VehicleManagement/UpdateVehiclePage";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-//Booking pages
+// Booking pages
 import AddBooking from "./pages/addBooking";
 import ViewBookings from "./pages/ViewBookings";
 import UpdateBooking from "./pages/UpdateBooking";
 import AdminViewBooking from "./pages/AdminViewBooking";
-//Schedule pages
+// Schedule pages
 import SchedulePage from "./pages/SchedulePage";
-import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminRouteManagement from "./pages/admin/AdminRouteManagement";
 import AdminScheduleManagement from "./pages/admin/AdminScheduleManagement";
 import RouteScheduleManagement from "./pages/admin/AdminDashboard";
@@ -74,6 +71,7 @@ function App() {
             <Route path="/welcome" element={<Welcome />} />
             <Route path="/profile" element={<Profile />} />
 
+            {/* Admin routes */}
             <Route element={<ProtectedRoute roles={["admin"]} />}>
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/admin/bookings" element={<AdminViewBooking />} />
@@ -119,8 +117,10 @@ function App() {
               />
             </Route>
 
+            {/* Complaint routes */}
             <Route path="/complaints" element={<ComplaintsPage />} />
             <Route path="/complaints/:id" element={<ComplaintDetailPage />} />
+            
             {/* Booking routes */}
             <Route path="/addBooking" element={<AddBooking />} />
             <Route path="/viewBookings" element={<ViewBookings />} />
