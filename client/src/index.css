@@ -338,6 +338,7 @@ h2 {
 
 /* =========================
    LANDING PAGE
+========================= */
 .landing {
   position: relative;
 }
@@ -814,6 +815,7 @@ h2 {
 
 /* =========================
   Header nav links (Home / Dashboard)
+========================= */
 
 .header-nav {
   display: flex;
@@ -848,6 +850,7 @@ h2 {
 
 /* =========================
 AddUser Page Theme 
+========================= */
 .adduser .card.adduser-card {
   border: 1px solid rgba(219, 227, 232, 0.95);
   box-shadow: var(--shadow-sm);
@@ -978,6 +981,8 @@ AddUser Page Theme
 
 /* =========================
 Complaints Admin UI
+========================= */
+
 .complaints-detail-head {
   display: flex;
   align-items: flex-end;
@@ -1421,6 +1426,7 @@ Complaints Admin UI
 
 /* =========================
 Welcome (Dashboard)
+========================= */
 .welcome {
   padding: 0.25rem;
 }
