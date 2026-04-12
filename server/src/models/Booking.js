@@ -90,17 +90,35 @@ const bookingSchema = new mongoose.Schema(
     stripeSessionId: String,
 
     paymentIntentId: String, // REQUIRED to issue refund
+
+    cancelAction: {
+      type: String,
+      enum: ["PASSENGER_CANCEL", "ADMIN_REJECT", "ADMIN_CANCEL"],
+    },
+
+    cancelReason: String,
+
+    cancelledBy: {
+      type: String,
+      enum: ["USER", "ADMIN", "SYSTEM"],
+    },
+
+    cancelledByUser: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+
+    cancelledAt: Date,
   },
   { timestamps: true }
 );
 
-/*
- Prevent same seat being booked twice for the same trip.
- MongoDB will enforce uniqueness.
-*/
-bookingSchema.index(
-  { tripId: 1, seatNumbers: 1 },
-  { unique: true }
-);
+// NOTE:
+// Seat conflicts are handled in the service layer using bookingRepository.findConflictingSeats,
+// which correctly takes into account transportType, coachNumber, locations, departureTime and status.
+// A database-level unique index on { tripId, seatNumbers } is too coarse for trains
+// (different coaches can legitimately reuse the same seat number) and also blocks
+// reusing seats from CANCELLED bookings. That index is therefore intentionally removed
+// to avoid E11000 duplicate key errors when the business logic says a seat is available.
 
 export default mongoose.model("Booking", bookingSchema);

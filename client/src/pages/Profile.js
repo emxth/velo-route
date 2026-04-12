@@ -89,20 +89,17 @@ const Profile = () => {
             required
           />
         </div>
-        <div className="space-y-1">
-          <label>Password (leave blank to keep current)</label>
-          <input
-            className="input-field"
-            name="password"
-            value={form.password}
-            onChange={handleChange}
-            type="password"
-            placeholder="New password"
-          />
-        </div>
+
         <button className="w-full btn-secondary" type="submit">
           Save
         </button>
+
+        <div className="text-left">
+          <button type="button" className="text-sm underline text-primary-600" onClick={() => navigate("/forgot-password")}>
+            Forgot password?
+          </button>
+        </div>
+
       </form>
 
       <hr />
