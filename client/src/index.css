@@ -308,11 +308,36 @@ h2 {
   margin-bottom: 1rem;
   color: var(--color-text);
 }
+/* Add these animations to your existing CSS */
+@keyframes slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+.animate-slide {
+  animation: slide 1.5s linear infinite;
+}
+
+.delay-100 {
+  animation-delay: 100ms;
+}
+
+.delay-200 {
+  animation-delay: 200ms;
+}
+
+
+.hover\:bg-gray-50:hover {
+  background-color: #f9fafb;
+}
 
 
 /* =========================
    LANDING PAGE
-========================= */
 .landing {
   position: relative;
 }
@@ -789,7 +814,6 @@ h2 {
 
 /* =========================
   Header nav links (Home / Dashboard)
-========================= */
 
 .header-nav {
   display: flex;
@@ -824,7 +848,6 @@ h2 {
 
 /* =========================
 AddUser Page Theme 
-========================= */
 .adduser .card.adduser-card {
   border: 1px solid rgba(219, 227, 232, 0.95);
   box-shadow: var(--shadow-sm);
@@ -955,7 +978,6 @@ AddUser Page Theme
 
 /* =========================
 Complaints Admin UI
-========================= */
 .complaints-detail-head {
   display: flex;
   align-items: flex-end;
@@ -1399,7 +1421,6 @@ Complaints Admin UI
 
 /* =========================
 Welcome (Dashboard)
-========================= */
 .welcome {
   padding: 0.25rem;
 }

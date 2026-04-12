@@ -17,6 +17,18 @@ import ComplaintsPage from "./pages/ComplaintsPage";
 import ComplaintDetailPage from "./pages/ComplaintDetailPage";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+//Booking pages
+import AddBooking from "./pages/addBooking";
+import ViewBookings from "./pages/ViewBookings";
+import UpdateBooking from "./pages/UpdateBooking";
+import AdminViewBooking from "./pages/AdminViewBooking";
+//Schedule pages
+import SchedulePage from "./pages/SchedulePage";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminRouteManagement from "./pages/admin/AdminRouteManagement";
+import AdminScheduleManagement from "./pages/admin/AdminScheduleManagement";
+import RouteScheduleManagement from "./pages/admin/AdminDashboard";
+
 import AddUser from "./pages/AddUser";
 import ViewComplaintsPage from "./pages/ViewComplaintsPage";
 import AdminPermissions from "./pages/AdminPermissions";
@@ -43,8 +55,13 @@ function App() {
             <Route path="/welcome" element={<Welcome />} />
             <Route path="/profile" element={<Profile />} />
 
+
             <Route element={<ProtectedRoute roles={["admin"]} />}>
               <Route path="/admin" element={<AdminPage />} />
+              <Route path="/admin/bookings" element={<AdminViewBooking />} />
+              <Route path="/admin/dashboard" element={<RouteScheduleManagement />} />
+              <Route path="/admin/routes" element={<AdminRouteManagement />} />
+              <Route path="/admin/schedules" element={<AdminScheduleManagement />} />
               <Route path="/admin-permissions" element={<AdminPermissions />} />
               <Route path="/add-user" element={<AddUser />} />
               <Route path="/view-complaints" element={<ViewComplaintsPage />} />
@@ -62,8 +79,20 @@ function App() {
               <Route path="/analyst" element={<AnalystPage />} />
             </Route>
 
+
+            <Route path="/schedules" element={<SchedulePage />} />
+
+
             <Route path="/complaints" element={<ComplaintsPage />} />
             <Route path="/complaints/:id" element={<ComplaintDetailPage />} />
+            {/* Booking routes */}
+            <Route path="/addBooking" element={<AddBooking />} />
+            <Route path="/viewBookings" element={<ViewBookings />} />
+            <Route path="/updateBooking/:id" element={<UpdateBooking />} />
+
+            {/* Schedule routes */}
+            <Route path="/schedules" element={<SchedulePage />} />
+
           </Route>
         </Route>
       </Routes>

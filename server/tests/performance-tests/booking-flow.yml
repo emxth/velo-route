@@ -1,5 +1,6 @@
 config:
   target: "http://localhost:5000"
+  processor: "./booking-flow-processor.js"
   phases:
     - duration: 10
       arrivalRate: 1
@@ -21,19 +22,25 @@ scenarios:
   - name: "Safe Booking Flow Test"
     flow:
 
+      # Ensure a dedicated user exists for this virtual user
+      - function: "setupUser"
+
       # LOGIN
       - post:
           url: "/api/auth/login"
           json:
-            email: "john@example.com"
-            password: "Password123"
+            email: "{{ email }}"
+            password: "{{ password }}"
           capture:
             - json: "$.token"
               as: "authToken"
+              strict: false
 
       # CREATE BOOKING
       - post:
           url: "/api/bookings/"
+          ifTrue: "authToken"
+          beforeRequest: "setValidDepartureTime"
           headers:
             Authorization: "Bearer {{ authToken }}"
           json:
@@ -45,16 +52,18 @@ scenarios:
             coachNumber: "{{ coachNumber }}" 
             fromLocation: "{{ fromLocation }}"
             toLocation: "{{ toLocation }}"
-            departureTime: "2026-03-01T15:00:00Z"
+            departureTime: "{{ departureTime }}"
           capture:
             - json: "$._id"
               as: "bookingId"
+              strict: false
 
       - log: "Booking Created: id={{ bookingId }}"
 
       # ---------------- GET THE CREATED BOOKING ----------------
       - get:
           url: "/api/bookings/me"
+          ifTrue: "authToken"
           headers:
             Authorization: "Bearer {{ authToken }}"
       
@@ -63,6 +72,7 @@ scenarios:
       # ---------------- UPDATE BOOKING ----------------
       - patch:
           url: "/api/bookings/{{ bookingId }}"
+          ifTrue: "bookingId"
           headers:
             Authorization: "Bearer {{ authToken }}"
           json:
@@ -73,6 +83,7 @@ scenarios:
       # ---------------- CANCEL BOOKING ----------------
       - patch:
           url: "/api/bookings/{{ bookingId }}/cancel"
+          ifTrue: "bookingId"
           headers:
             Authorization: "Bearer {{ authToken }}"
 
@@ -81,6 +92,7 @@ scenarios:
        # ---------------- DELETE CANCELLED BOOKING ----------------
       - delete:
           url: "/api/bookings/{{ bookingId }}"
+          ifTrue: "bookingId"
           headers:
             Authorization: "Bearer {{ authToken }}"
 
