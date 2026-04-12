@@ -1,5 +1,4 @@
 import * as bookingService from "../services/bookingService.js";
-import { createCheckoutSession, retrieveSession } from "../services/paymentService.js";
 import logger from "../config/logger.js";
 
 /*
@@ -22,6 +21,24 @@ export const getMyBookings = async (req, res, next) => {
     const bookings = await bookingService.getMyBookings(req.user._id);
     res.json(bookings);
   } catch (err) { next(err); }
+};
+
+export const getOccupiedSeats = async (req, res, next) => {
+  try {
+    const occupiedSeats = await bookingService.getOccupiedSeats({
+      tripId: req.query.tripId,
+      transportType: req.query.transportType,
+      fromLocation: req.query.fromLocation,
+      toLocation: req.query.toLocation,
+      departureTime: req.query.departureTime,
+      coachNumber: req.query.coachNumber,
+      excludeBookingId: req.query.excludeBookingId,
+    });
+
+    res.json({ occupiedSeats });
+  } catch (err) {
+    next(err);
+  }
 };
 
 export const getAllBookings = async (_req, res, next) => {
@@ -54,7 +71,7 @@ export const cancelBooking = async (req, res, next) => {
 // Start Payment
 export const payBooking = async (req, res, next) => {
   try {
-    const session = await createCheckoutSession(req.params.id);
+    const session = await bookingService.startPayment(req.params.id, req.user._id);
 
     res.json({
       checkoutUrl: session.url,
@@ -66,31 +83,32 @@ export const payBooking = async (req, res, next) => {
   }
 };
 
-// Confirm Payment (NEW CORRECT VERSION)
-export const confirmBooking = async (req, res, next) => {
+// Passenger confirms payment after Stripe redirect
+export const confirmPayment = async (req, res, next) => {
   try {
     const { sessionId } = req.body;
 
     if (!sessionId) {
-      return res.status(400).json({
-        message: "Session ID is required"
-      });
+      return res.status(400).json({ message: "Session ID is required" });
     }
 
-    // Retrieve session from Stripe
-    const session = await retrieveSession(sessionId);
-
-    if (!session.payment_intent) {
-      return res.status(400).json({
-        message: "Payment not completed yet"
-      });
-    }
-
-    // Delegate update to booking service
-    const booking = await bookingService.confirmBooking(
+    const booking = await bookingService.confirmPayment(
       req.params.id,
-      session.payment_intent
+      req.user._id,
+      sessionId
     );
+
+    res.json(booking);
+  } catch (err) {
+    logger.error(`Payment confirmation failed: ${err.message}`);
+    next(err);
+  }
+};
+
+// Admin confirms booking (payment already validated in service)
+export const confirmBooking = async (req, res, next) => {
+  try {
+    const booking = await bookingService.confirmBooking(req.params.id);
 
     res.json(booking);
 
@@ -114,6 +132,28 @@ export const clearBookingHistoryController = async (req, res, next) => {
     const result = await bookingService.clearBookingHistory(req.user._id);
     res.json(result);
   } catch (err) {
+    next(err);
+  }
+};
+
+export const adminRejectBooking = async (req, res, next) => {
+  try {
+    const { reason } = req.body;
+    const booking = await bookingService.adminRejectBooking(req.params.id, req.user._id, reason);
+    res.json(booking);
+  } catch (err) {
+    logger.error(`Admin booking rejection failed: ${err.message}`);
+    next(err);
+  }
+};
+
+export const adminCancelBooking = async (req, res, next) => {
+  try {
+    const { reason } = req.body;
+    const booking = await bookingService.adminCancelBooking(req.params.id, req.user._id, reason);
+    res.json(booking);
+  } catch (err) {
+    logger.error(`Admin booking cancellation failed: ${err.message}`);
     next(err);
   }
 };

@@ -57,6 +57,8 @@ afterEach(async () => {
 =========================== */
 describe("Booking Integration Tests", () => {
   it("should create a booking successfully", async () => {
+    const departureTime = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
     const res = await request(app)
       .post("/api/bookings")
       .set("Authorization", `Bearer ${token}`)
@@ -67,16 +69,16 @@ describe("Booking Integration Tests", () => {
         seatNumbers: ["A1"],
         fromLocation: "Colombo",
         toLocation: "Kandy",
-        departureTime: new Date(),
+        departureTime,
       });
     expect(res.statusCode).toBe(201);
     expect(res.body.seatNumbers).toContain("A1");
     expect(res.body.passenger).toBe(userId.toString());
   });
 
-  console.log("Token : ", `Bearer ${token}`);
-
   it("should prevent duplicate seat booking", async () => {
+    const departureTime = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
     // First booking
     await request(app)
       .post("/api/bookings")
@@ -88,7 +90,7 @@ describe("Booking Integration Tests", () => {
         seatNumbers: ["A1"],
         fromLocation: "Colombo",
         toLocation: "Kandy",
-        departureTime: new Date(),
+        departureTime,
       });
       
 
@@ -103,7 +105,7 @@ describe("Booking Integration Tests", () => {
         seatNumbers: ["A1"],
         fromLocation: "Colombo",
         toLocation: "Kandy",
-        departureTime: new Date(),
+        departureTime,
       });
     //console.log("Token create : ", res);
     expect(res.statusCode).toBe(400);
@@ -111,6 +113,8 @@ describe("Booking Integration Tests", () => {
   });
 
   it("should return 401 if no token provided", async () => {
+    const departureTime = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
     const res = await request(app)
       .post("/api/bookings")
       .send({
@@ -120,7 +124,7 @@ describe("Booking Integration Tests", () => {
         seatNumbers: ["A2"],
         fromLocation: "Colombo",
         toLocation: "Kandy",
-        departureTime: new Date(),
+        departureTime,
       });
 
     expect(res.statusCode).toBe(401);

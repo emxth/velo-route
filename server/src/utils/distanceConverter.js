@@ -1,5 +1,5 @@
 export function meterToKm(meters) {
-    return (meters / 1000);
+    return Number((meters / 1000).toFixed(2));
 }
 
 export function secondsToMinutes(second) {

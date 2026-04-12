@@ -3,27 +3,64 @@ import { Link, useLocation } from "react-router-dom";
 // Add Side Nav items paths here
 const NAV_GROUPS = [
   {
-    category: "User Management",
+    category: "Administration",
     items: [
-      { key: "admin", label: "Admin Area", to: "/admin" },
-      { key: "operator", label: "Operator Area", to: "/operator" },
+      { key: "admin", label: "User Permissions", to: "/admin-permissions" },
+      { key: "admin", label: "Add User", to: "/add-user" },
+      { key: "admin", label: "View Complaints & Feedback", to: "/view-complaints" },
     ],
   },
   {
+    category: "Department Management",
+    items: [{ key: "admin", label: "View Departments", to: "/departments" }],
+  },
+  {
     category: "Vehicle Management",
-    items: [{ key: "driver", label: "Driver Area", to: "/driver" }],
+    items: [{ key: "admin", label: "View Vehicles", to: "/vehicles" }],
   },
   {
     category: "Analytics",
     items: [{ key: "analyst", label: "Analyst Area", to: "/analyst" }],
   },
   {
+    category: "Trip Information",
+    items: [{ key: "schedules", label: "Trip Finder", to: "/schedules", public: true },]
+  },
+  {
     category: "Complaints & Feedback",
     items: [
       // mark as public so it bypasses allowed filter
-      { key: "complaints", label: "View Complaints", to: "/complaints", public: true },
+      { key: "complaints", label: "Add Complaints", to: "/complaints", public: true },
     ],
   },
+  {
+    category: "Bookings Management",
+    items: [
+      // mark as public so it bypasses allowed filter
+      // { key: "addBooking", label: "Add Booking", to: "/addBooking", public: true },
+      { key: "viewBookings", label: "View Bookings", to: "/viewBookings", public: true },
+    ],
+  },
+  {
+    category: "Bookings Management - Admin",
+    items: [
+      // mark as public so it bypasses allowed filter
+      { key: "admin", label: "Admin View Bookings", to: "/admin/bookings" }
+      ],
+  },
+  {
+    category: "Route & Schedule Management",
+    items: [{ key: "admin", label: "Dashboard", to: "/admin/dashboard" }],
+  },
+  {
+    category: "Route & Schedule Management",
+    items: [{ key: "admin", label: "Manage Routes", to: "/admin/routes" },
+    { key: "admin", label: "Manage Schedules", to: "/admin/schedules" },
+    { key: "admin", label: "Quick Add Route", to: "/admin/routes?action=add" },
+
+    ],
+  },
+
 ];
 
 const SideNav = ({ allowed = [] }) => {
@@ -33,15 +70,15 @@ const SideNav = ({ allowed = [] }) => {
     location.pathname === path || location.pathname.startsWith(path + "/");
 
   // Keep only categories that have at least one allowed or public link
-  const visibleGroups = NAV_GROUPS
-    .map((group) => ({
-      ...group,
-      items: group.items.filter((item) => item.public || allowed.includes(item.key)),
-    }))
-    .filter((group) => group.items.length > 0);
+  const visibleGroups = NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter(
+      (item) => item.public || allowed.includes(item.key),
+    ),
+  })).filter((group) => group.items.length > 0);
 
   return (
-    <aside className="w-64 h-screen p-4 space-y-6 bg-white border-r">
+    <aside className="w-64 h-screen max-h-screen p-4 space-y-6 overflow-y-auto bg-white border-r">
       <h3 className="text-lg font-semibold">Navigation</h3>
 
       {visibleGroups.length === 0 && (
@@ -57,8 +94,11 @@ const SideNav = ({ allowed = [] }) => {
             <Link
               key={item.key}
               to={item.to}
-              className={`block rounded-lg px-3 py-2 text-sm font-medium hover:bg-neutral-100 ${isActive(item.to) ? "bg-neutral-100 text-primary-700" : "text-neutral-800"
-                }`}
+              className={`block rounded-lg px-3 py-2 text-sm font-medium hover:bg-neutral-100 ${
+                isActive(item.to)
+                  ? "bg-neutral-100 text-primary-700"
+                  : "text-neutral-800"
+              }`}
             >
               {item.label}
             </Link>

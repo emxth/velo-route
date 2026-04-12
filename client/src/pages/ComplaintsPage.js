@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from "react";
-import { Link } from "react-router-dom";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 
@@ -13,7 +12,6 @@ const emptyForm = {
 
 const ComplaintsPage = () => {
   const { user } = useAuth();
-  const isAdmin = user?.role === "admin";
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(emptyForm);
@@ -30,7 +28,13 @@ const ComplaintsPage = () => {
     setLoading(true);
     try {
       const { data } = await api.get("/complaints");
-      setItems(data);
+      // If admin, only show their own in this page
+      const filtered =
+        user?.role === "admin"
+          ? data.filter((c) => c.user === user?.id)
+          : data;
+
+      setItems(filtered);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load complaints");
     } finally {
@@ -40,7 +44,7 @@ const ComplaintsPage = () => {
 
   useEffect(() => {
     load();
-  }, []);
+  }, [user]);
 
   const useMyLocation = () => {
     if (!navigator.geolocation) {
@@ -136,18 +140,18 @@ const ComplaintsPage = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 complaints-page">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Complaints & Feedback</h1>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <div className="space-y-4 card">
+        <div className="space-y-4 card complaints-card">
           <h3 className="text-lg font-semibold">Submit</h3>
           {error && <div className="text-sm text-red-600">{error}</div>}
           {success && <div className="text-sm text-green-600">{success}</div>}
           <form onSubmit={submit} className="space-y-3">
-            <div className="flex gap-3">
+            <div className="complaints-kind">
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="radio"
@@ -207,10 +211,10 @@ const ComplaintsPage = () => {
               />
             </div>
 
-            <div className="p-3 space-y-2 border rounded-lg bg-neutral-50">
+            <div className="complaints-location-box">
               <div className="flex items-center justify-between">
                 <div className="text-sm font-medium">Attach Location (optional)</div>
-                <button type="button" className="text-sm text-primary-600" onClick={useMyLocation}>
+                <button type="button" className="complaints-link-btn" onClick={useMyLocation}>
                   Use my location
                 </button>
               </div>
@@ -225,12 +229,12 @@ const ComplaintsPage = () => {
                 />
                 {searching && <div className="text-xs text-neutral-500">Searching…</div>}
                 {results.length > 0 && (
-                  <div className="overflow-auto text-sm bg-white border rounded-md max-h-40">
+                  <div className="complaints-results">
                     {results.map((r) => (
                       <button
                         key={`${r.lat}-${r.lng}`}
                         type="button"
-                        className="w-full px-3 py-2 text-left hover:bg-neutral-100"
+                        className="complaints-result-btn"
                         onClick={() => selectResult(r)}
                       >
                         {r.label}
@@ -281,7 +285,7 @@ const ComplaintsPage = () => {
               </div>
 
               {(form.location.lat || form.location.lng) && (
-                <div className="text-xs text-neutral-700">
+                <div className="complaints-selected">
                   Selected: {form.location.lat}, {form.location.lng}{" "}
                   {form.location.label ? `(${form.location.label})` : ""}
                 </div>
@@ -294,8 +298,8 @@ const ComplaintsPage = () => {
           </form>
         </div>
 
-        <div className="space-y-3 card">
-          <h3 className="text-lg font-semibold">My {isAdmin ? "All" : ""} Complaints/Feedback</h3>
+        <div className="space-y-3 card complaints-card">
+          <h3 className="text-lg font-semibold">My Complaints/Feedback</h3>
           {loading && <div className="text-sm text-neutral-600">Loading...</div>}
           {!loading && items.length === 0 && (
             <div className="text-sm text-neutral-600">No items yet.</div>
@@ -304,23 +308,18 @@ const ComplaintsPage = () => {
             {items.map((c) => (
               <li
                 key={c.id}
-                className="flex items-center justify-between p-3 border rounded-lg hover:bg-neutral-50"
+                className="flex items-center justify-between p-3 complaints-list-item"
               >
                 <div>
                   <div className="font-semibold">
-                    <Link className="underline text-primary-600" to={`/complaints/${c.id}`}>
+                    <div className="text-primary-600">
                       {c.subject}
-                    </Link>
+                    </div>
                   </div>
                   <div className="text-xs text-neutral-600">
-                    {c.kind} · {c.category} · {c.status}
+                    {c.kind} · {c.category}
+                    <span className={`complaints-status ml-1 complaints-status-${c.status}`}>{c.status}</span>
                   </div>
-                  {c.location && (
-                    <div className="text-xs text-neutral-500">
-                      {c.location.lat}, {c.location.lng}{" "}
-                      {c.location.label ? `(${c.location.label})` : ""}
-                    </div>
-                  )}
                 </div>
                 <div className="text-xs text-neutral-500">
                   {new Date(c.createdAt).toLocaleDateString()}

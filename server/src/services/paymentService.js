@@ -32,8 +32,8 @@ export const createCheckoutSession = async (bookingId) => {
       },
     ],
     mode: "payment",
-    success_url: `${process.env.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.CLIENT_URL}/cancel`,
+    success_url: `${process.env.CLIENT_URL}/viewBookings?payment=success&session_id={CHECKOUT_SESSION_ID}&bookingId=${booking._id}`,
+    cancel_url: `${process.env.CLIENT_URL}/viewBookings?payment=cancel&bookingId=${booking._id}`,
   });
 
   // Save session ID only (paymentIntent does NOT exist yet)
@@ -64,16 +64,22 @@ export const retrieveSession = async (stripeSessionId) => {
 /*
   Refund payment using Stripe PaymentIntent.
 */
-export const refundPayment = async (paymentIntentId) => {
+export const refundPayment = async (paymentIntentId, amountInCents) => {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2024-04-10" });
 
   if (!paymentIntentId) {
     throw new Error("No payment intent found for refund");
   }
 
-  const refund = await stripe.refunds.create({
+  const refundPayload = {
     payment_intent: paymentIntentId,
-  });
+  };
+
+  if (Number.isInteger(amountInCents) && amountInCents > 0) {
+    refundPayload.amount = amountInCents;
+  }
+
+  const refund = await stripe.refunds.create(refundPayload);
 
   logger.info(`Refund issued for paymentIntent ${paymentIntentId}`);
 

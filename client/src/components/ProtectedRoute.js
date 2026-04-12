@@ -6,9 +6,10 @@ import api from "../api/axios";
 const PATH_KEY_MAP = {
   "/welcome": "dashboard",
   "/admin": "admin",
-  "/operator": "operator",
-  "/driver": "driver",
-  "/analyst": "analyst",
+
+  "/admin/dashboard": "dashboard",
+  "/admin/routes": "routes",
+  "/admin/schedules": "admin-schedules",
 };
 
 const ProtectedRoute = ({ roles }) => {
