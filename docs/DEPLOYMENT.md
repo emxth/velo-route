@@ -7,7 +7,7 @@ This document describes the deployment process and configuration of the **VeloRo
 ## 🌐 Live Application URLs
 
 ### 🔹 Frontend (Client)
-- URL: https://veloroute-ten.vercel.app/
+- URL: https://velo-route-vercel-deploy.vercel.app/
 - Platform: Vercel
 
 ### 🔹 Backend (Server)
