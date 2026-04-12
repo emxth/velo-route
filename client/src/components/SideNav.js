@@ -12,8 +12,12 @@ const NAV_GROUPS = [
     ],
   },
   {
+    category: "Department Management",
+    items: [{ key: "admin", label: "View Departments", to: "/departments" }],
+  },
+  {
     category: "Vehicle Management",
-    items: [{ key: "driver", label: "Driver Area", to: "/driver" }],
+    items: [{ key: "admin", label: "View Vehicles", to: "/vehicles" }],
   },
   {
     category: "Analytics",
@@ -75,12 +79,12 @@ const SideNav = ({ allowed = [] }) => {
     location.pathname === path || location.pathname.startsWith(path + "/");
 
   // Keep only categories that have at least one allowed or public link
-  const visibleGroups = NAV_GROUPS
-    .map((group) => ({
-      ...group,
-      items: group.items.filter((item) => item.public || allowed.includes(item.key)),
-    }))
-    .filter((group) => group.items.length > 0);
+  const visibleGroups = NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter(
+      (item) => item.public || allowed.includes(item.key),
+    ),
+  })).filter((group) => group.items.length > 0);
 
   return (
     <aside className="max-h-screen overflow-y-auto w-64 h-screen p-4 space-y-6 bg-white border-r">
@@ -99,8 +103,11 @@ const SideNav = ({ allowed = [] }) => {
             <Link
               key={item.key}
               to={item.to}
-              className={`block rounded-lg px-3 py-2 text-sm font-medium hover:bg-neutral-100 ${isActive(item.to) ? "bg-neutral-100 text-primary-700" : "text-neutral-800"
-                }`}
+              className={`block rounded-lg px-3 py-2 text-sm font-medium hover:bg-neutral-100 ${
+                isActive(item.to)
+                  ? "bg-neutral-100 text-primary-700"
+                  : "text-neutral-800"
+              }`}
             >
               {item.label}
             </Link>

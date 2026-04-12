@@ -108,6 +108,7 @@ Client base: `http://localhost:5173`
 ## API Overview (Base: `http://localhost:5000/api`)
 
 ### Auth
+
 - `POST /auth/register` — `{ name, email, password, role? }`
 - `POST /auth/login` — `{ email, password }` → `{ token, user }`
 - `POST /auth/forgot` — `{ email }` (sends OTP email)
@@ -116,6 +117,7 @@ Client base: `http://localhost:5173`
 - `GET /auth/admin/ping` — Bearer + `admin`
 
 ### Users
+
 - `GET /users` — admin only
 - `GET /users/me` — current user
 - `PUT /users/me` — update current
@@ -125,7 +127,24 @@ Client base: `http://localhost:5173`
 - `PUT /users/:id/permissions` — admin (role change)
 - `GET /users/:id` — admin
 
+### Departments Management (Admin only)
+
+- `POST /departments` — create a new department
+- `GET /departments` — list all departments
+- `GET /departments/:id` — get department by ID
+- `PUT /departments/:id` — update department
+- `DELETE /departments/:id` - delete department
+
+### Vehicles Management (Admin only)
+
+- `POST /vehicles` — create a new vehicle
+- `GET /vehicles` — list all vehicles
+- `GET /vehicles/:id` — get vehicle by ID
+- `PUT /vehicles/:id` — update vehicle
+- `DELETE /vehicles/:id` - delete vehicle
+
 ### Complaints & Feedback
+
 - `POST /complaints` — create complaint
 - `POST /complaints/feedback` — create feedback
 - `GET /complaints` — admin: all; user: own
@@ -135,18 +154,19 @@ Client base: `http://localhost:5173`
 - `DELETE /complaints/:id` — admin
 
 ### Other modules (present but not detailed here)
+
 - Bookings: `/bookings`
 - Routes: `/routes`
-- Vehicles: `/vehicles`
 - Schedules: `/schedules`
-- Departments: `/departments`
 
 ---
 
 ## Routes Management
+
 Handles transport routes,stops,distance calculation and estimated travel duration.
 
 --- Features ---
+
 - create transport routes with multiple stops
 - Automatically calculate route distance and duration using OSRM API
 - Update route stops and recalculate travel data
@@ -154,6 +174,7 @@ Handles transport routes,stops,distance calculation and estimated travel duratio
 - Delete routes
 
 ---API Endpoints---
+
 - `POST /api/routes/addRoute` -Create New Transport Route
 - `GET /api/routes/` - Get all transport routes
 - `GET /api/routes/route/:id` - Get specific Route
@@ -163,40 +184,40 @@ Handles transport routes,stops,distance calculation and estimated travel duratio
 --- Third Party API ---
 OSRM (Open Source Routing Machine) - Used for calculate route distance and duration
 
-
 ## Schedule Management
 
 Manage vehicle trip schedules for routes and ensure vehicles are not double-scheduled until finished trip
 
 --Features--
- 1. Assign Vehicle to routes
- 2. Automatically calculate arrival time based on route duration
- 3. Detect schedule conflict
- 4. Prevent Vehicle assignment when previous trip is not completed
- 5. Retrieve and manage schedules
+
+1.  Assign Vehicle to routes
+2.  Automatically calculate arrival time based on route duration
+3.  Detect schedule conflict
+4.  Prevent Vehicle assignment when previous trip is not completed
+5.  Retrieve and manage schedules
 
 --- API Endpoints ---
+
 - `/api/schedules/addSchedule` - Add New Schedul
 - `/api/schedules/` - Get all schedules
 - `/api/schedules/:id` - Get specific schedule by using schedule id
-- `/api/schedules/updateSchedule/:id` - Update Existing  schedule
+- `/api/schedules/updateSchedule/:id` - Update Existing schedule
 - `/api/schedules/:id` - Delete specific schedule
 
 --- Conflict Detection Logic ---
 
 The system prevent scheduling conflicts by checking:
 
-  - Vehicle already assigned to another trip
-  - Trip overlapping with existing schedules
-  - Vehicle still running previous trip
-
-
+- Vehicle already assigned to another trip
+- Trip overlapping with existing schedules
+- Vehicle still running previous trip
 
 ## Authentication
 
 All protected routes require `Authorization: Bearer <JWT>` from `POST /auth/login`.
 
 ### Quick Auth Flow (Postman):
+
 1. Register (or use existing user)
 2. Login → copy `token`
 3. Set Postman “Authorization” type Bearer Token with that `token`
@@ -207,6 +228,7 @@ All protected routes require `Authorization: Bearer <JWT>` from `POST /auth/logi
 ## Client (SPA)
 
 Key pages:
+
 - `Login` (`/login`), `Register` (`/register`)
 - `ForgotPassword` (`/forgot-password`): requests OTP
 - `ResetPassword` (`/reset-password`): uses OTP + new password, then redirects to login
@@ -214,9 +236,27 @@ Key pages:
 - `ComplaintDetailPage` (`/complaints/:id`): view; admin can update status/response/delete
 - `SideNav`: includes Complaints link (public for authenticated users)
 
+## Admin‑only Pages
+
+--- Department Management ---
+
+- `AllDepartmentsPage` (`/departments`): – grid/table view with search (department name, manager name, email), filter by status/region, pagination, reset filters.
+- `AddDepartmentPage` (`/departments/add`): – form with validation, red asterisks, colored icons.
+- `DepartmentDetailsPage` (`/departments/:id`): – detailed view with edit/delete buttons, custom delete modal.
+- `UpdateDepartmentPage` (`/departments/edit/:id`): – pre‑filled form, partial update allowed.
+
+--- Vehicle Management ---
+
+- `AllVehiclesPage` (`/vehicles`): – table view with search (registration number), filter by category (Bus/Train), type (Passenger/Cargo), status (Available/Under Maintenance/Unavailable), reset filters, pagination, effective status (expiry/overdue logic).
+- `AddVehiclePage` (`/vehicles/add`): – comprehensive form with conditional capacity fields, insurance/fitness/maintenance sections, coloured borders, red asterisks, photo upload.
+- `VehicleDetailsPage` (`/vehicles/:id`): – detailed view with insurance/fitness cards, maintenance schedule, delete modal, edit/delete buttons.
+- `UpdateVehiclePage` (`/vehicles/edit/:id`): – pre‑filled form with same validation, orange update button.
+- Sidebar Navigation – dynamically shows accessible areas based on user role/permissions.
+
 ---
 
 ## Location Usability (Client)
+
 ## Environment Variables
 
 - Server expects the variables shown above (.env in `server/`).
@@ -236,11 +276,12 @@ From `client/`:
 
 - `npm run dev` — start frontend
 - `npm run build` — production build
+- `npm test` — frontend unit/integration tests (Jest + React Testing Library)
 
 ## Testing
 
 - **Unit:** `npm test`
-- **Integration:** `npm run test:integration` (uses mongodb-memory-server, supertest; mailer mocked)
+- **Integration:** `npm run test:integration`
 - Test details: `docs/testing-report.md`
 
 ## Performance Tests
@@ -252,6 +293,11 @@ cd server
 npx artillery run tests/performance/complaints.yml
 
 artillery run tests/performance-tests/booking-flow.yml
+
+npx artillery run tests/performance-tests/department-flow.test.yml
+
+npx artillery run tests/performance-tests/vehicle-flow.test.yml
+
 ```
 
 Configure target/auth in the YAML before running.
