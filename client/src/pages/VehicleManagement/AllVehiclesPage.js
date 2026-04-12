@@ -52,25 +52,24 @@ const AllVehiclesPage = () => {
     switch (status) {
       case "AVAILABLE":
         return (
-          <span className="px-3 py-1.5 rounded-full text-sm font-semibold bg-emerald-100 text-emerald-700">
+          <span className="px-3 py-1.5 rounded-full text-sm font-semibold bg-emerald-100 text-emerald-700 whitespace-nowrap">
             Available
           </span>
         );
       case "UNDER MAINTENANCE":
         return (
-          <span className="px-3 py-1.5 rounded-full text-sm font-semibold bg-amber-100 text-amber-700">
+          <span className="px-3 py-1.5 rounded-full text-sm font-semibold bg-amber-100 text-amber-700 whitespace-nowrap">
             Under Maintenance
           </span>
         );
       default:
         return (
-          <span className="px-3 py-1.5 rounded-full text-sm font-semibold bg-rose-100 text-rose-700">
+          <span className="px-3 py-1.5 rounded-full text-sm font-semibold bg-rose-100 text-rose-700 whitespace-nowrap">
             Unavailable
           </span>
         );
     }
   };
-
   // Fetch all vehicles
   useEffect(() => {
     const fetchVehicles = async () => {
@@ -333,11 +332,13 @@ const AllVehiclesPage = () => {
       </div>
 
       {/* Pagination - using Pagination component */}
-      <Pagination
-        page={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-      />
+      {totalPages > 1 && (
+        <Pagination
+          page={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
+      )}
     </div>
   );
 };
