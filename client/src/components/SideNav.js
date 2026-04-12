@@ -5,7 +5,6 @@ const NAV_GROUPS = [
   {
     category: "Administration",
     items: [
-      { key: "admin", label: "Admin View", to: "/admin" },
       { key: "admin", label: "User Permissions", to: "/admin-permissions" },
       { key: "admin", label: "Add User", to: "/add-user" },
       { key: "admin", label: "View Complaints & Feedback", to: "/view-complaints" },
@@ -25,9 +24,7 @@ const NAV_GROUPS = [
   },
   {
     category: "Trip Information",
-    items: [
-      { key: "schedules", label: "Trip Finder", to: "/schedules", public: true },
-    ]
+    items: [{ key: "schedules", label: "Trip Finder", to: "/schedules", public: true },]
   },
   {
     category: "Complaints & Feedback",
@@ -57,15 +54,9 @@ const NAV_GROUPS = [
   },
   {
     category: "Route & Schedule Management",
-    items: [{
-      key: "admin", label: "Manage Routes", to: "/admin/routes"
-    },
-    {
-      key: "admin", label: "Manage Schedules", to: "/admin/schedules"
-    },
-    {
-      key: "admin", label: "Quick Add Route", to: "/admin/routes?action=add"
-    },
+    items: [{ key: "admin", label: "Manage Routes", to: "/admin/routes" },
+    { key: "admin", label: "Manage Schedules", to: "/admin/schedules" },
+    { key: "admin", label: "Quick Add Route", to: "/admin/routes?action=add" },
 
     ],
   },

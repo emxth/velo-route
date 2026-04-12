@@ -10,11 +10,6 @@ const PATH_KEY_MAP = {
   "/admin/dashboard": "dashboard",
   "/admin/routes": "routes",
   "/admin/schedules": "admin-schedules",
-
-  "/operator": "operator",
-  "/driver": "driver",
-  "/analyst": "analyst",
-
 };
 
 const ProtectedRoute = ({ roles }) => {
