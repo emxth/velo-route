@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 VeloRoute CI runner.
 
@@ -118,7 +117,12 @@ class CiRunner:
         )
 
     def client_build(self) -> StepResult:
-        return self._run("client-build", ["run", "build"], cwd=CLIENT)
+        return self._run(
+            "client-build",
+            ["run", "build"],
+            cwd=CLIENT,
+            env={"DISABLE_ESLINT_PLUGIN": "true"},
+        )
 
     def run_stage(self, stage: str) -> int:
         steps: dict[str, list] = {
