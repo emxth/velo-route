@@ -5,12 +5,18 @@ const listUsersRepo = jest.fn();
 const findById = jest.fn();
 const updateUserById = jest.fn();
 const deleteUserById = jest.fn();
+const createUser = jest.fn();
+const findByEmail = jest.fn();
+const countUsers = jest.fn();
 
 jest.unstable_mockModule("../../../src/repositories/userRepository.js", () => ({
   listUsers: listUsersRepo,
   findById,
   updateUserById,
   deleteUserById,
+  createUser,
+  findByEmail,
+  countUsers,
 }));
 
 const {
@@ -36,9 +42,11 @@ describe("userService", () => {
       { _id: "1", name: "Admin", email: "a@test.com", role: "admin" },
       { _id: "2", name: "User", email: "u@test.com", role: "user" },
     ]);
+    countUsers.mockResolvedValue(2);
     const res = await listUsers();
-    expect(res[0].allowedNav).toEqual(ROLE_PERMISSIONS.admin);
-    expect(res[1].allowedNav).toEqual(ROLE_PERMISSIONS.user);
+    expect(res.data[0].allowedNav).toEqual(ROLE_PERMISSIONS.admin);
+    expect(res.data[1].allowedNav).toEqual(ROLE_PERMISSIONS.user);
+    expect(res.pagination.total).toBe(2);
   });
 
   test("getUserPermissions validates id", async () => {

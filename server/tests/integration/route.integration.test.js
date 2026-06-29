@@ -51,7 +51,7 @@ afterEach(async () => {
 describe("Route Management Integration", () => {
     test("should create route successfully", async () => {
         const res = await request(app)
-            .post("/api/routes/addRoute")
+            .post("/api/routes")
             .set("Authorization", `Bearer ${token}`)
             .send({
                 name: "Ragama to Kadawatha",
@@ -95,13 +95,11 @@ describe("Route Management Integration", () => {
         expect(res.statusCode).toBe(201);
         expect(res.body.name).toBe("Ragama to Kadawatha");
         expect(res.body.stops.length).toBe(3);
-
-        routeId = res.body._id;
     });
 
     test("Should reject invalid stops", async () => {
         const res = await request(app)
-            .post("/api/routes/addRoute")
+            .post("/api/routes")
             .set("Authorization", `Bearer ${token}`)
             .send({
                 name: "Ragama to Kadawatha",

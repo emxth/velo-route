@@ -114,8 +114,9 @@ describe("User Management Integration", () => {
       .set("Authorization", `Bearer ${adminToken}`);
 
     expect(res.statusCode).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.length).toBeGreaterThanOrEqual(1);
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.data.length).toBeGreaterThanOrEqual(1);
+    expect(res.body.pagination).toBeTruthy();
   });
 
   // Gets user details by id (admin)
