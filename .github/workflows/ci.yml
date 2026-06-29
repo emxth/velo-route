@@ -32,4 +32,6 @@ jobs:
           python-version: "3.12"
 
       - name: Run CI pipeline
+        env:
+          NPM_CONFIG_LEGACY_PEER_DEPS: true
         run: python ci/run.py --stage all
