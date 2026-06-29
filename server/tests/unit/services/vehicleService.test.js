@@ -92,6 +92,11 @@ describe("Vehicle Service Unit Tests", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    process.env.CLOUDINARY_API_KEY = "test-key";
+  });
+
+  afterEach(() => {
+    delete process.env.CLOUDINARY_API_KEY;
   });
 
   // ==========================================

@@ -2,14 +2,19 @@ import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import cloudinary from "../config/cloudinary.js";
 
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: "veloroute/vehicles",
-    allowed_formats: ["jpg", "png", "jpeg"],
-    transformation: [{ width: 800, height: 600, crop: "limit" }],
-  },
-});
+const useMemoryStorage =
+  process.env.NODE_ENV === "test" || !process.env.CLOUDINARY_API_KEY;
+
+const storage = useMemoryStorage
+  ? multer.memoryStorage()
+  : new CloudinaryStorage({
+      cloudinary,
+      params: {
+        folder: "veloroute/vehicles",
+        allowed_formats: ["jpg", "png", "jpeg"],
+        transformation: [{ width: 800, height: 600, crop: "limit" }],
+      },
+    });
 
 const upload = multer({
   storage,

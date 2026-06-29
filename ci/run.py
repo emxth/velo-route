@@ -27,6 +27,19 @@ ROOT = Path(__file__).resolve().parent.parent
 SERVER = ROOT / "server"
 CLIENT = ROOT / "client"
 
+# .env is gitignored, so CI must inject the same values tests expect locally.
+SERVER_TEST_ENV: dict[str, str] = {
+    "NODE_ENV": "test",
+    "JWT_SECRET": "testsecret",
+    "JWT_EXPIRES_IN": "1d",
+    "CORS_ORIGIN": "http://localhost:3000",
+    "MAIL_HOST": "smtp.example.com",
+    "MAIL_PORT": "587",
+    "MAIL_USER": "ci@test.com",
+    "MAIL_PASS": "ci-mail-pass",
+    "MAIL_FROM": "VeloRoute CI <ci@test.com>",
+}
+
 
 @dataclass
 class StepResult:
@@ -94,7 +107,7 @@ class CiRunner:
         return self._run("install-client", ["ci"], cwd=CLIENT)
 
     def server_test(self) -> StepResult:
-        return self._run("server-test", ["test"], cwd=SERVER)
+        return self._run("server-test", ["test"], cwd=SERVER, env=SERVER_TEST_ENV)
 
     def client_test(self) -> StepResult:
         return self._run(

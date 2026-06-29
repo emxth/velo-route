@@ -6,6 +6,18 @@ import cloudinary from "../config/cloudinary.js";
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
+const cloudinaryEnabled = () => Boolean(process.env.CLOUDINARY_API_KEY);
+
+const filePhotoMeta = (file) => ({
+  vehiclePhoto: file.path || `test://${file.originalname}`,
+  cloudinaryId: file.filename || file.originalname || "test-upload",
+});
+
+const destroyCloudinaryAsset = async (publicId) => {
+  if (!publicId || !cloudinaryEnabled()) return;
+  await cloudinary.uploader.destroy(publicId);
+};
+
 export const createVehicle = async (adminId, data, file) => {
   // Database existence checks (can't be done in middleware)
   if (!file) throw new AppError("Vehicle photo is required", 400);
@@ -30,13 +42,7 @@ export const createVehicle = async (adminId, data, file) => {
     );
   }
 
-  // File handling
-  let vehiclePhoto = "";
-  let cloudinaryId = "";
-  if (file) {
-    vehiclePhoto = file.path;
-    cloudinaryId = file.filename;
-  }
+  const { vehiclePhoto, cloudinaryId } = filePhotoMeta(file);
 
   const vehicle = await vehicleRepo.create({
     ...data,
@@ -132,11 +138,8 @@ export const updateVehicle = async (id, adminId, data, file) => {
   // Image update handling
   let updateData = { ...data, updatedBy: adminId };
   if (file) {
-    if (existing.cloudinaryId) {
-      await cloudinary.uploader.destroy(existing.cloudinaryId);
-    }
-    updateData.vehiclePhoto = file.path;
-    updateData.cloudinaryId = file.filename;
+    await destroyCloudinaryAsset(existing.cloudinaryId);
+    Object.assign(updateData, filePhotoMeta(file));
   }
 
   const updated = await vehicleRepo.updateById(id, updateData);
@@ -153,9 +156,7 @@ export const deleteVehicle = async (id, adminId) => {
     throw new AppError("Vehicle not found", 404);
   }
 
-  if (existing.cloudinaryId) {
-    await cloudinary.uploader.destroy(existing.cloudinaryId);
-  }
+  await destroyCloudinaryAsset(existing.cloudinaryId);
 
   await vehicleRepo.deleteById(id);
   return { message: "Vehicle deleted successfully" };
